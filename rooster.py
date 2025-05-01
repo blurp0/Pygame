@@ -54,7 +54,7 @@ class ManokNaPuti(Rooster):
         self.skills = {
             "Peck": 10,
             "Scratch": 15,
-            "Charge": 60,
+            "Charge": 20,
             "Dodge": 0
         }
 

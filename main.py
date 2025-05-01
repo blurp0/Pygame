@@ -1,7 +1,7 @@
 import pygame
 import sys
 import random
-from settings import WIDTH, HEIGHT, screen, RED, GREEN
+from settings import *
 from rooster import ManokNaPuti, ManokNaPula, ManokNaItim
 from ui import (
     draw_menu,
@@ -12,12 +12,17 @@ from ui import (
     draw_text,
     draw_dialog_box,
     draw_bag_overlay,
-    draw_post_win_buttons
+    draw_post_win_buttons,
+    draw_shop_confirmation
 )
-
+zoom_factor = 0.95
+scaled_bg_width = int(WIDTH * zoom_factor)
+scaled_bg_height = int(HEIGHT * zoom_factor)
 # Load battle background once
-battle_bg = pygame.image.load(r"assets\battle_bg.jpg").convert()
-battle_bg = pygame.transform.scale(battle_bg, (WIDTH, HEIGHT))
+battle_bg = pygame.image.load(r"assets\GrassyField.webp").convert()
+battle_bg = pygame.transform.scale(battle_bg, (scaled_bg_width, scaled_bg_height))
+
+bg_rect = pygame.Rect(-40, 150, scaled_bg_width, scaled_bg_height)
 
 # Initialize game states and data
 all_roosters = {
@@ -91,11 +96,11 @@ def reset_game(level=1):
 
     # Assign enemy based on level
     if level == 1:
-        enemy = ManokNaPuti(570, 50, is_enemy=True)
+        enemy = ManokNaPuti(540, 70, is_enemy=True)
     elif level == 2:
-        enemy = ManokNaPula(570, 50, is_enemy=True)
+        enemy = ManokNaPula(540, 70, is_enemy=True)
     else:
-        enemy = ManokNaItim(570, 50, is_enemy=True)
+        enemy = ManokNaItim(540, 70, is_enemy=True)
 
     current_turn = "player"
     game_over = False
@@ -129,7 +134,7 @@ shop_back_btn = None
 
 
 while running:
-    screen.fill(GREEN)
+    screen.fill(PASTEL_GREEN)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -203,7 +208,7 @@ while running:
         elif game_state == "game":
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if not game_over and not (dialog_state == "waiting" or current_turn == "enemy"):
-                    # Inventory and attack logic unchanged
+                    # Handle Inventory and attack logic for buttons
                     if dialog_state == "bag":
                         for btn_rect, label in bag_buttons:
                             if btn_rect.collidepoint(event.pos):
@@ -223,9 +228,12 @@ while running:
                                     pending_enemy_attack = True
                                     current_turn = "enemy"
                                 elif label == "Cancel":
+                                    # Ensure Cancel button in bag state works correctly
                                     selected_item = None
-                                    dialog_state = "menu"
+                                    dialog_state = "menu"  # Or any desired state like 'waiting' or 'attack'
+
                     elif dialog_state == "attack":
+                        # Attack logic with additional Cancel functionality
                         for btn_rect, label in dialog_buttons:
                             if btn_rect.collidepoint(event.pos) and label in player.skills:
                                 dmg = player.attack(enemy, label)
@@ -234,7 +242,15 @@ while running:
                                 enemy_attack_start_time = pygame.time.get_ticks()
                                 pending_enemy_attack = True
                                 current_turn = "enemy"
+
+                            elif btn_rect.collidepoint(event.pos) and label == "Cancel":
+                                # Handle Cancel button during attack
+                                dialog_state = "menu"  # Transition to menu or reset battle as needed
+                                message = "You canceled the fight."
+                                break  # Exit the loop once Cancel is clicked
+
                     else:
+                        # General dialog logic for Fight, Bag, Surrender, Cancel
                         for btn_rect, label in dialog_buttons:
                             if btn_rect.collidepoint(event.pos):
                                 if label == "Fight":
@@ -247,12 +263,15 @@ while running:
                                     game_over = True
                                     surrender_time = pygame.time.get_ticks()
                                 elif label == "Cancel":
-                                    dialog_state = "menu"
+                                    dialog_state = "menu"  # Go back to menu or a neutral state
+
                 else:
+                    # Handle the game over state and transitions to next level or main menu
                     if next_level_btn and next_level_btn.collidepoint(event.pos):
                         reset_game(current_level + 1)
                     elif main_menu_btn and main_menu_btn.collidepoint(event.pos):
                         game_state = "menu"
+
 
     # DRAWING
     if game_state == "menu":
@@ -262,18 +281,12 @@ while running:
     elif game_state == "shop":
         shop_buttons, shop_back_btn = draw_shop(screen, shop_items, WIDTH, HEIGHT)
         if confirm_purchase:
-            pygame.draw.rect(screen, RED, (WIDTH//2 - 150, HEIGHT//2 - 40, 300, 100))
-            draw_text(screen, message, WIDTH//2 - 140, HEIGHT//2 - 30)
-            pygame.draw.rect(screen, GREEN, (WIDTH//2 - 70, HEIGHT//2 + 20, 60, 30))  # Yes button
-            draw_text(screen, "Yes", WIDTH//2 - 55, HEIGHT//2 + 25)
-            pygame.draw.rect(screen, RED, (WIDTH//2 + 10, HEIGHT//2 + 20, 60, 30))    # No button
-            draw_text(screen, "No", WIDTH//2 + 25, HEIGHT//2 + 25)
-        
+            draw_shop_confirmation(screen, message, WIDTH, HEIGHT)
     elif game_state == "roster":
         buttons, back_btn = draw_roster(screen, unlocked_roosters, all_roosters, selected_rooster_name, WIDTH, HEIGHT)
 
     elif game_state == "game":
-        screen.blit(battle_bg, (30, -180))
+        screen.blit(battle_bg, (0, 0), bg_rect)
         player.draw(screen)
         enemy.draw(screen)
         draw_health_bar(screen, player, 100, 380)
@@ -350,6 +363,10 @@ while running:
     # Display money
     if game_state == "menu" or (game_state == "game" and game_over):
         draw_text(screen, f"Money: {money}", 10, 10)
+
+    elif game_state == "shop":  # Assuming you have a "shop" state for the shop screen
+        draw_text(screen, f"Money: {money}", 10, 10)
+        # Add other shop-related UI elements here (items, buttons, etc.)
 
 
     pygame.display.flip()

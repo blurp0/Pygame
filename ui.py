@@ -1,5 +1,5 @@
 import pygame
-from settings import screen, WIDTH, HEIGHT, WHITE, BLACK, GRAY, font
+from settings import *
 
 # Helper to fit text within a box
 def render_fitting_text(text, max_width, max_height, color=BLACK):
@@ -37,13 +37,17 @@ def draw_health_bar(surface, rooster, x, y):
 
 # Main menu UI
 def draw_menu(screen, width):
-    title = font.render("Sabong Main Menu", True, WHITE)
+    title = font.render("Sabong Main Menu", True, BLACK)
     screen.blit(title, (width // 2 - 120, 100))
+    start_btn_color = GREEN  # Set the button color from settings.py
+    roster_btn_color = BLUE
+    shop_btn_color = ORANGE
+    exit_btn_color = RED
 
-    start_btn = draw_button(screen, "Start Game", width // 2 - 100, 200, 200, 40)
-    roster_btn = draw_button(screen, "Roster", width // 2 - 100, 260, 200, 40)
-    shop_btn = draw_button(screen, "Shop", width // 2 - 100, 320, 200, 40)
-    exit_btn = draw_button(screen, "Exit", width // 2 - 100, 380, 200, 40)
+    start_btn = draw_button(screen, "Start Game", width // 2 - 100, 200, 200, 40, start_btn_color)
+    roster_btn = draw_button(screen, "Roster", width // 2 - 100, 260, 200, 40,roster_btn_color)
+    shop_btn = draw_button(screen, "Shop", width // 2 - 100, 320, 200, 40,shop_btn_color)
+    exit_btn = draw_button(screen, "Exit", width // 2 - 100, 380, 200, 40,exit_btn_color)
 
     return start_btn, roster_btn, shop_btn, exit_btn
 
@@ -213,3 +217,69 @@ def draw_post_win_buttons(screen, width, height):
     next_btn = draw_button(screen, "Next Level", width // 2 - 150, 260, 140, 50, (173, 216, 230))
     main_btn = draw_button(screen, "Main Menu", width // 2 + 10, 260, 140, 50, (255, 228, 181))
     return next_btn, main_btn
+def draw_shop(screen, shop_items, width, height):
+    font = pygame.font.SysFont(None, 36)
+    title = font.render("Shop", True, (0, 0, 0))
+    screen.blit(title, (width // 2 - title.get_width() // 2, 50))
+
+    button_rects = []
+    y_offset = 120
+    for item, price in shop_items.items():
+        item_text = f"{item} - ${price}"
+        text_surface = font.render(item_text, True, (0, 0, 0))
+        btn_rect = pygame.Rect(width // 2 - 100, y_offset, 200, 40)
+        pygame.draw.rect(screen, (255, 255, 255), btn_rect)
+        screen.blit(text_surface, (btn_rect.x + 10, btn_rect.y + 5))
+        button_rects.append((btn_rect, item))
+        y_offset += 60
+
+    back_btn = pygame.Rect(width // 2 - 50, height - 70, 100, 40)
+    pygame.draw.rect(screen, (200, 0, 0), back_btn)
+    back_text = font.render("Back", True, (255, 255, 255))
+    screen.blit(back_text, (back_btn.x + 10, back_btn.y + 5))
+
+    return button_rects, back_btn
+
+def draw_shop_confirmation(screen, message, width, height):
+    font = pygame.font.SysFont(None, 28)
+    box_width, box_height = 300, 120
+    box_rect = pygame.Rect(width // 2 - box_width // 2, height // 2 - box_height // 2, box_width, box_height)
+
+    pygame.draw.rect(screen, (255, 255, 200), box_rect)
+
+    # Word-wrapping logic
+    def wrap_text(text, font, max_width):
+        words = text.split()
+        lines = []
+        current_line = ""
+        for word in words:
+            test_line = current_line + word + " "
+            if font.size(test_line)[0] <= max_width:
+                current_line = test_line
+            else:
+                lines.append(current_line.strip())
+                current_line = word + " "
+        lines.append(current_line.strip())
+        return lines
+
+    wrapped_lines = wrap_text(message, font, box_width - 20)
+    y_offset = box_rect.y + 10
+    for line in wrapped_lines:
+        msg_surface = font.render(line, True, (0, 0, 0))
+        line_width = msg_surface.get_width()
+        x_position = box_rect.centerx - line_width // 2
+        screen.blit(msg_surface, (x_position, y_offset))
+        y_offset += msg_surface.get_height() + 2
+
+    # Buttons
+    yes_btn = pygame.Rect(width // 2 - 70, height // 2 + 20, 60, 30)
+    no_btn = pygame.Rect(width // 2 + 10, height // 2 + 20, 60, 30)
+
+    pygame.draw.rect(screen, (0, 200, 0), yes_btn)
+    pygame.draw.rect(screen, (200, 0, 0), no_btn)
+
+    yes_text = font.render("Yes", True, (255, 255, 255))
+    no_text = font.render("No", True, (255, 255, 255))
+
+    screen.blit(yes_text, (yes_btn.x + (60 - yes_text.get_width()) // 2, yes_btn.y + 5))
+    screen.blit(no_text, (no_btn.x + (60 - no_text.get_width()) // 2, no_btn.y + 5))
