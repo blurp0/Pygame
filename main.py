@@ -2,7 +2,7 @@ import pygame
 import sys
 import random
 from settings import *
-from rooster import ManokNaPuti, ManokNaPula, ManokNaItim
+from rooster import ManokNaPuti, ManokNaPula, ManokNaItim, ManokNaBalbon, ChickenNiGlock9
 from ui import (
     draw_menu,
     draw_level_select,
@@ -28,7 +28,9 @@ bg_rect = pygame.Rect(-40, 150, scaled_bg_width, scaled_bg_height)
 all_roosters = {
     "Manok na Puti": ManokNaPuti(),
     "Manok na Pula": ManokNaPula(),
-    "Manok na Itim": ManokNaItim()
+    "Manok na Itim": ManokNaItim(),
+    "Manok na Balbon": ManokNaBalbon(),
+    "Chicken Ni Glock9": ChickenNiGlock9()
 }
 
 unlocked_roosters = ["Manok na Puti"]
@@ -91,16 +93,24 @@ def reset_game(level=1):
         player = ManokNaPuti(150, 300, is_enemy=False)
     elif selected_rooster_name == "Manok na Pula":
         player = ManokNaPula(150, 300, is_enemy=False)
-    else:
+    elif selected_rooster_name == "Manok na Itim":
         player = ManokNaItim(150, 300, is_enemy=False)
-
+    elif selected_rooster_name == "Manok na Balbon":
+        player = ManokNaBalbon(150, 300, is_enemy=False)
+    else:
+        selected_rooster_name == "Chicken Ni Glock9"
+        player = ChickenNiGlock9(150, 300, is_enemy=False)
     # Assign enemy based on level
     if level == 1:
         enemy = ManokNaPuti(540, 70, is_enemy=True)
     elif level == 2:
         enemy = ManokNaPula(540, 70, is_enemy=True)
-    else:
+    elif level == 3:
         enemy = ManokNaItim(540, 70, is_enemy=True)
+    elif level == 4:
+        enemy  = ManokNaBalbon(540, 70, is_enemy=True)
+    else:
+        enemy = ChickenNiGlock9(540, 70, is_enemy=True)
 
     current_turn = "player"
     game_over = False
@@ -132,7 +142,8 @@ shop_buttons = []
 shop_back_btn = None
 
 
-
+# Main game loop
+# Main game loop
 while running:
     screen.fill(PASTEL_GREEN)
 
@@ -161,6 +172,7 @@ while running:
                         game_state = "game"
                 if level_back_btn and level_back_btn.collidepoint(event.pos):
                     game_state = "menu"
+        
         # SHOP
         elif game_state == "shop":
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -203,8 +215,7 @@ while running:
                 if back_btn and back_btn.collidepoint(event.pos):
                     game_state = "menu"
 
-
- # GAME
+        # GAME
         elif game_state == "game":
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if not game_over and not (dialog_state == "waiting" or current_turn == "enemy"):
@@ -230,22 +241,30 @@ while running:
                                 elif label == "Cancel":
                                     # Ensure Cancel button in bag state works correctly
                                     selected_item = None
-                                    dialog_state = "menu"  # Or any desired state like 'waiting' or 'attack'
-
+                                    dialog_state = "waiting"
                     elif dialog_state == "attack":
                         # Attack logic with additional Cancel functionality
                         for btn_rect, label in dialog_buttons:
                             if btn_rect.collidepoint(event.pos) and label in player.skills:
                                 dmg = player.attack(enemy, label)
-                                message = f"You used {label}! Enemy took {dmg} damage."
+
+                                # Check if the damage is zero and update the message accordingly
+                                if dmg == 0:
+                                    message = f"{label} missed! The attack didn't land."
+                                else:
+                                    # Ensure the enemy's health doesn't go below 0
+                                    enemy.health = max(enemy.health - dmg, 0)  # Prevent enemy health from going below 0
+                                    message = f"You used {label}! Enemy took {dmg} damage."
+
                                 dialog_state = "waiting"
                                 enemy_attack_start_time = pygame.time.get_ticks()
                                 pending_enemy_attack = True
                                 current_turn = "enemy"
+                                break  # Exit the loop after a valid attack is selected
 
                             elif btn_rect.collidepoint(event.pos) and label == "Cancel":
                                 # Handle Cancel button during attack
-                                dialog_state = "menu"  # Transition to menu or reset battle as needed
+                                dialog_state = "menu"  # Go back to menu or reset battle as needed
                                 message = "You canceled the fight."
                                 break  # Exit the loop once Cancel is clicked
 
@@ -271,7 +290,9 @@ while running:
                         reset_game(current_level + 1)
                     elif main_menu_btn and main_menu_btn.collidepoint(event.pos):
                         game_state = "menu"
-
+                    # Retry logic here (ensure game restarts from the current level)
+                    elif retry_btn and retry_btn.collidepoint(event.pos):
+                        reset_game(current_level)  # Restart from the current level
 
     # DRAWING
     if game_state == "menu":
@@ -289,15 +310,23 @@ while running:
         screen.blit(battle_bg, (0, 0), bg_rect)
         player.draw(screen)
         enemy.draw(screen)
-        draw_health_bar(screen, player, 100, 380)
-        draw_health_bar(screen, enemy, 600, 180)
+        draw_health_bar(screen, player, 100, 240)
+        draw_health_bar(screen, enemy, 300, 30)
 
         # Enemy attack delay
         if not game_over and current_turn == "enemy" and pending_enemy_attack:
             if pygame.time.get_ticks() - enemy_attack_start_time >= 2000:
                 skill = random.choice(list(enemy.skills.keys()))
                 dmg = enemy.attack(player, skill)
-                message = f"Enemy used {skill}! You took {dmg} damage."
+
+                # Check if the damage is zero and update the message accordingly
+                if dmg == 0:
+                    message = f"Enemy used {skill}, but the attack missed!"
+                else:
+                    # Ensure the player's health doesn't go below 0
+                    player.health = max(player.health - dmg, 0)  # Prevent player health from going below 0
+                    message = f"Enemy used {skill}! You took {dmg} damage."
+                
                 current_turn = "player"
                 pending_enemy_attack = False
                 dialog_state = "menu"
@@ -307,9 +336,10 @@ while running:
         if player.health <= 0:
             message = "You lost!"
             game_over = True
+            reward_given = True  # Prevent reward when the player loses
 
         elif enemy.health <= 0:
-            if not reward_given:
+            if not reward_given:  # Ensure reward is given only once
                 unlocked_name = enemy.name
 
                 # Coin reward logic: full on 1st clear, 30% on 2nd, none thereafter
@@ -335,25 +365,32 @@ while running:
                     message = f"You won! You earned {reward} coins!"
 
                 game_over = True
-                reward_given = True  # ✅ PREVENT MULTIPLE REWARDS
+                reward_given = True  # ✅ Prevent Multiple Rewards
                 highest_level_unlocked = max(highest_level_unlocked, current_level + 1)
 
-
-        if game_over and "won" in message.lower():
-            next_level_btn, main_menu_btn = draw_post_win_buttons(screen, WIDTH, HEIGHT)
-        else:
-            next_level_btn = None
-            main_menu_btn = None
-
+        # Draw buttons for WIN/LOSS state
+        if game_over:
+            if "won" in message.lower():
+                # Show next level or main menu buttons when the player wins
+                next_level_btn, main_menu_btn = draw_post_win_buttons(screen, WIDTH, HEIGHT, game_over=True, victory=True)
+                retry_btn = None
+            else:
+                # Show Retry and Main Menu buttons on Loss
+                retry_btn, main_menu_btn = draw_post_win_buttons(screen, WIDTH, HEIGHT, game_over=True, victory=False)
+                next_level_btn = None
+        # Drawing the dialog box
         dialog_buttons = draw_dialog_box(
             screen, fight_mode, list(player.skills.keys()),
             message, inventory, dialog_state, selected_item
         )
+
+        # Drawing the bag overlay when the player is in "bag" state
         bag_buttons = (
             draw_bag_overlay(screen, inventory, selected_item)
             if dialog_state == "bag" else []
         )
 
+        # Handling surrender logic
         if game_over and message.startswith("You surrendered!") and surrender_time:
             if pygame.time.get_ticks() - surrender_time >= 1500:
                 game_state = "menu"

@@ -29,11 +29,45 @@ def draw_button(screen, text, x, y, width, height, color=GRAY):
 def draw_text(screen, text, x, y):
     label = font.render(text, True, BLACK)
     screen.blit(label, (x, y))
-
-# Draw health bar for combat
 def draw_health_bar(surface, rooster, x, y):
-    pygame.draw.rect(surface, (255, 255, 255), (x, y, 100, 10))
-    pygame.draw.rect(surface, (0, 255, 0), (x, y, max(rooster.health, 0), 10))
+    bar_width = 220
+    bar_height = 10
+    padding = 20
+    container_width = bar_width + padding * 2
+    container_height = bar_height + 50  # total height of the UI box
+
+    # Use smaller font for name and health label
+    small_font = pygame.font.Font(None, 23)  # Adjust size as needed
+
+    # Create container rect and draw it
+    container_rect = pygame.Rect(x - padding, y, container_width, container_height)
+    pygame.draw.rect(surface, DARK_GRAY, container_rect, border_radius=10)
+
+    # Calculate element positions within the container
+    content_start_y = y + 10  # small margin from top
+
+    # Draw name centered above the health bar
+    name_text = small_font.render(rooster.name, True, WHITE)
+    name_rect = name_text.get_rect(topleft=(x, content_start_y))
+    surface.blit(name_text, name_rect)
+
+    # Compute health ratio and bar position
+    max_health = getattr(rooster, "max_health", 100)
+    health_ratio = max(rooster.health / max_health, 0)
+    current_bar_width = int(bar_width * health_ratio)
+
+    bar_y = name_rect.bottom + 5
+    pygame.draw.rect(surface, WHITE, (x, bar_y, bar_width, bar_height))
+    pygame.draw.rect(surface, (0, 255, 0), (x, bar_y, current_bar_width, bar_height))
+
+    # Draw health label under the bar, right-aligned
+    health_label = small_font.render(f"{rooster.health}/{rooster.max_health}", True, WHITE)
+    label_rect = health_label.get_rect()
+    label_x = x + bar_width - label_rect.width
+    label_y = bar_y + bar_height + 5
+    surface.blit(health_label, (label_x, label_y))
+
+
 
 # Main menu UI
 def draw_menu(screen, width):
@@ -206,17 +240,25 @@ def draw_bag_overlay(screen, inventory, selected_item):
     return buttons
 
 # Post-win actions UI
-def draw_post_win_buttons(screen, width, height):
+def draw_post_win_buttons(screen, width, height, game_over, victory):
     overlay = pygame.Surface((width, height))
     overlay.set_alpha(230)
     overlay.fill((255, 255, 255))
     screen.blit(overlay, (0, 0))
 
     f = pygame.font.SysFont(None, 36)
-    screen.blit(f.render("Victory! Choose your next action:", True, (0, 0, 0)), (width // 2 - 180, 200))
-    next_btn = draw_button(screen, "Next Level", width // 2 - 150, 260, 140, 50, (173, 216, 230))
-    main_btn = draw_button(screen, "Main Menu", width // 2 + 10, 260, 140, 50, (255, 228, 181))
-    return next_btn, main_btn
+
+    if victory:
+        screen.blit(f.render("Victory! Choose your next action:", True, (0, 0, 0)), (width // 2 - 180, 200))
+        next_btn = draw_button(screen, "Next Level", width // 2 - 150, 260, 140, 50, (173, 216, 230))
+        main_btn = draw_button(screen, "Main Menu", width // 2 + 10, 260, 140, 50, (255, 228, 181))
+        return next_btn, main_btn
+    else:
+        screen.blit(f.render("Defeat! Choose your next action:", True, (0, 0, 0)), (width // 2 - 180, 200))
+        retry_btn = draw_button(screen, "Retry", width // 2 - 150, 260, 140, 50, (173, 216, 230))
+        main_btn = draw_button(screen, "Main Menu", width // 2 + 10, 260, 140, 50, (255, 228, 181))
+        return retry_btn, main_btn
+
 def draw_shop(screen, shop_items, width, height):
     font = pygame.font.SysFont(None, 36)
     title = font.render("Shop", True, (0, 0, 0))
