@@ -1,22 +1,22 @@
 # Initial inventory setup
 inventory = {
-    "Small Potion": 2,
-    "Large Potion": 1
+    "Maliit na Potion": 2,
+    "Malaking Potion": 1
 }
 
 
 # Use potion function that updates the player's health
 def use_potion(player, item):
     if item in inventory and inventory[item] > 0:
-        if item == "Small Potion":
+        if item == "Maliit na Potion":
             player.health = min(player.health + 20, 100)
             inventory[item] -= 1
-            return "You used Small Potion! Healed 20 HP."
-        elif item == "Large Potion":
+            return "Ginamit mo Maliit na Potion! Naghilom ng 20 HP."
+        elif item == "Malaking potion":
             player.health = min(player.health + 50, 100)
             inventory[item] -= 1
-            return "You used Large Potion! Healed 50 HP."
-    return f"You don't have {item} or it's out of stock."
+            return "Ginamit mo Malaking potion! Naghilom 50 HP."
+    return f"Wala ka nito {item} o wala nang stock."
 
 
 # Add item to inventory
@@ -34,7 +34,7 @@ def remove_item(item, quantity=1):
         if inventory[item] == 0:
             del inventory[item]
     else:
-        return f"Not enough {item} in inventory."
+        return f"Hindi sapat {item} sa imbentaryo."
 
 
 # Check if an item exists in inventory
@@ -47,7 +47,7 @@ def display_inventory():
     if inventory:
         inventory_list = [f"{item}: {quantity}" for item, quantity in inventory.items()]
         return "\n".join(inventory_list)
-    return "Inventory is empty."
+    return "Walang laman ang imbentaryo."
 
 
 # Example of usage (simulating a player and using potions)
@@ -60,12 +60,12 @@ class Player:
 player = Player()
 
 # Test item usage
-print(use_potion(player, "Small Potion"))  # Should heal and reduce potion count
+print(use_potion(player, "Maliit Potion"))  # Should heal and reduce potion count
 print(use_potion(player, "Large Potion"))  # Should heal and reduce potion count
 
 # Add and remove items from inventory
-add_item("Small Potion", 3)
-remove_item("Large Potion", 1)
+add_item("Maliit Potion", 3)
+remove_item("Malaking potion", 1)
 
 # Check inventory display
 print(display_inventory())

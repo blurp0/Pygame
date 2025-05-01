@@ -6,9 +6,11 @@ from rooster import ManokNaPuti, ManokNaPula, ManokNaItim, ManokNaBalbon, Chicke
 from ui import (
     draw_menu,
     draw_level_select,
+    draw_rooster_skills_panel,
     draw_roster,
     draw_health_bar,
     draw_button,
+    draw_skill_description_box,
     draw_text,
     draw_dialog_box,
     draw_bag_overlay,
@@ -35,7 +37,7 @@ all_roosters = {
 
 unlocked_roosters = ["Manok na Puti"]
 selected_rooster_name = "Manok na Puti"
-inventory = {"Small Potion": 2, "Large Potion": 1}
+inventory = {"Maliit na Potion": 2, "Malaking Potion": 1}
 
 
 # Core game state
@@ -61,9 +63,10 @@ highest_level_unlocked = 1
 money = 0
 beaten_levels = set()
 beaten_counts = {}
-shop_items = {"Small Potion": 10, "Large Potion": 25}
+shop_items = {"Maliit na Potion": 10, "Malaking Potion": 25}
 shop_buttons = []
 shop_back_btn = None
+selected_skill = None
 
 # Level select transition
 def enter_level_select():
@@ -72,14 +75,20 @@ def enter_level_select():
 
 def draw_shop(screen, items, width, height):
     y = 100
-    draw_text(screen, "Shop - Click to Buy", width // 2 - 100, 50)
+    title = "Tindahan - I-click para Bumili"
+    title_surface = font.render(title, True, BLACK)
+    title_x = (width - title_surface.get_width()) // 2
+    screen.blit(title_surface, (title_x, 50))
+
     buttons = []
     for name, price in items.items():
         btn = draw_button(screen, f"{name} - {price} coins", width // 2 - 120, y, 240, 40)
         buttons.append((btn, name))
         y += 60
-    back_btn = draw_button(screen, "Back", width // 2 - 100, y + 20, 200, 40)
+
+    back_btn = draw_button(screen, "Bumalik", width // 2 - 100, y + 20, 200, 40)
     return buttons, back_btn
+
 
 def reset_game(level=1):
     global player, enemy, current_turn, game_over, message, dialog_state, fight_mode
@@ -114,7 +123,6 @@ def reset_game(level=1):
 
     current_turn = "player"
     game_over = False
-    message = ""
     dialog_state = "menu"
     fight_mode = True
     selected_item = None
@@ -122,6 +130,7 @@ def reset_game(level=1):
     pending_enemy_attack = False
     enemy_attack_start_time = None
     reward_given = False
+    message = "Ano ang gagawin mo?"
 
 # Start at the highest unlocked level
 reset_game(highest_level_unlocked)
@@ -140,6 +149,8 @@ dialog_buttons = []
 bag_buttons = []
 shop_buttons = []
 shop_back_btn = None
+retry_btn = None
+
 
 
 # Main game loop
@@ -184,16 +195,16 @@ while running:
                         if money >= cost:
                             inventory[item_to_buy] = inventory.get(item_to_buy, 0) + 1
                             money -= cost
-                            message = "Item Purchased Successfully"
+                            message = "Matagumpay na Nabili ang Item"
                         else:
-                            message = "Item Purchase Failed, Not Enough Money"
+                            message = "Nabigo ang Pagbili ng Item, Kulang ang Pera"
                         confirm_purchase = False
                         item_to_buy = None
 
                     elif no_rect.collidepoint(event.pos):
                         confirm_purchase = False
                         item_to_buy = None
-                        message = "Purchase Cancelled"
+                        message = "Kinansela ang Pagbili"
                 else:
                     for btn_rect, item_name in shop_buttons:
                         if btn_rect.collidepoint(event.pos):
@@ -210,6 +221,8 @@ while running:
                 for btn_rect, name in buttons:
                     if btn_rect.collidepoint(event.pos):
                         selected_rooster_name = name
+                        selected_skill = None  # Reset selected skill when a new rooster is selected
+
                 if back_btn and back_btn.collidepoint(event.pos):
                     game_state = "menu"
 
@@ -217,20 +230,19 @@ while running:
         elif game_state == "game":
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if not game_over and not (dialog_state == "waiting" or current_turn == "enemy"):
-                    
                     if dialog_state == "bag":
                         for btn_rect, label in bag_buttons:
                             if btn_rect.collidepoint(event.pos):
                                 if label in inventory:
                                     selected_item = label
                                 elif label == "Use" and selected_item:
-                                    if selected_item == "Small Potion":
+                                    if selected_item == "Maliit na Potion":
                                         player.health += 20
                                     elif selected_item == "Large Potion":
                                         player.health += 50
                                     inventory[selected_item] -= 1
-                                    player.health = min(player.health, 100)
-                                    message = f"You used {selected_item}!"
+                                    player.health = min(player.health, player.max_health)
+                                    message = f"Ginamit mo ang {selected_item}!"
                                     selected_item = None
                                     dialog_state = "waiting"
                                     enemy_attack_start_time = pygame.time.get_ticks()
@@ -238,7 +250,8 @@ while running:
                                     current_turn = "enemy"
                                 elif label == "Cancel":
                                     selected_item = None
-                                    dialog_state = "waiting"
+                                    dialog_state = "menu"
+                                    message = "Ano ang gagawin mo?"
 
                     elif dialog_state == "attack":
                         for btn_rect, label in dialog_buttons:
@@ -246,10 +259,10 @@ while running:
                                 if label in player.skills:
                                     dmg = player.attack(enemy, label)
                                     if dmg == 0:
-                                        message = f"{label} missed! The attack didn't land."
+                                        message = f"Nagmiss ang {label} Hindi tumama ang atake."
                                     else:
                                         enemy.health = max(enemy.health - dmg, 0)
-                                        message = f"You used {label}! Enemy took {dmg} damage."
+                                        message = f"Ginamit mo ang {label}! Nakatanggap ng {dmg}  pinsala ang kaaway."
 
                                     dialog_state = "waiting"
                                     enemy_attack_start_time = pygame.time.get_ticks()
@@ -259,34 +272,35 @@ while running:
 
                                 elif label == "Cancel":
                                     dialog_state = "menu"
-                                    message = "You canceled the fight."
+                                    message = "Ano ang gagawin mo?"
                                     break
 
                     elif dialog_state == "confirm_surrender":
                         for btn_rect, label in dialog_buttons:
                             if btn_rect.collidepoint(event.pos):
                                 if label == "Yes":
-                                    message = "You surrendered!"
+                                    message = "Sumuko ka!"
                                     game_over = True
                                     surrender_time = pygame.time.get_ticks()
                                     dialog_state = "menu"
                                 elif label == "No":
                                     dialog_state = "menu"
-                                    message = "Surrender canceled."
+                                    message = "Ano ang gagawin mo?"
 
                     else:
                         for btn_rect, label in dialog_buttons:
                             if btn_rect.collidepoint(event.pos):
-                                if label == "Fight":
+                                if label == "Laban":
                                     dialog_state = "attack"
                                     fight_mode = True
                                 elif label == "Bag":
                                     dialog_state = "bag"
-                                elif label == "Surrender":
+                                elif label == "Sumuko":
                                     dialog_state = "confirm_surrender"
-                                    message = "Are you sure you want to surrender?"
+                                    message = "Sigurado ka bang gusto mong sumuko?"
                                 elif label == "Cancel":
                                     dialog_state = "menu"
+                                    break
 
                 else:
                     if next_level_btn and next_level_btn.collidepoint(event.pos):
@@ -295,6 +309,7 @@ while running:
                         game_state = "menu"
                     elif retry_btn and retry_btn.collidepoint(event.pos):
                         reset_game(current_level)
+                        game_state = "game"  # Ensure the state resets to "game"
 
     # DRAWING
     if game_state == "menu":
@@ -307,6 +322,20 @@ while running:
             draw_shop_confirmation(screen, message, WIDTH, HEIGHT)
     elif game_state == "roster":
         buttons, back_btn = draw_roster(screen, unlocked_roosters, all_roosters, selected_rooster_name, WIDTH, HEIGHT)
+
+        # Retrieve the selected rooster object from all_roosters
+        selected_rooster = all_roosters[selected_rooster_name]
+
+        # Draw the rooster's skills panel
+        skill_buttons = draw_rooster_skills_panel(screen, selected_rooster.skills, selected_skill, WIDTH, HEIGHT)
+
+        # Draw the skill description box
+        draw_skill_description_box(screen, selected_skill, selected_rooster.skills, WIDTH, HEIGHT)
+
+        # Handle skill selection
+        for btn, skill in skill_buttons:
+            if btn.collidepoint(pygame.mouse.get_pos()) and pygame.mouse.get_pressed()[0]:
+                selected_skill = skill  # Update selected skill on click (directly assign skill as it is the name)
 
     elif game_state == "game":
         screen.blit(battle_bg, (0, 0), bg_rect)
@@ -323,11 +352,11 @@ while running:
 
                 # Check if the damage is zero and update the message accordingly
                 if dmg == 0:
-                    message = f"Enemy used {skill}, but the attack missed!"
+                    message = f"Enemy ginamit ang {skill}, pero hindi tumama ang atake!"
                 else:
                     # Ensure the player's health doesn't go below 0
                     player.health = max(player.health - dmg, 0)  # Prevent player health from going below 0
-                    message = f"Enemy used {skill}! You took {dmg} damage."
+                    message = f"Ginamit ng kaaway ang {skill}! Nakakuha ka ng {dmg} na pinsala."
                 
                 current_turn = "player"
                 pending_enemy_attack = False
@@ -336,7 +365,7 @@ while running:
 
         # WIN/LOSS & REWARD
         if player.health <= 0:
-            message = "You lost!"
+            message = "Tinalo ka"
             game_over = True
             reward_given = True  # Prevent reward when the player loses
 
@@ -362,24 +391,36 @@ while running:
                 # Unlock and notify
                 if unlocked_name not in unlocked_roosters:
                     unlocked_roosters.append(unlocked_name)
-                    message = f"You won! Unlocked {unlocked_name} and earned {reward} coins!"
+                    message = f"Nanalo ka! Na-unlock ang {unlocked_name} at nakakuha ng {reward} coins!"
                 else:
-                    message = f"You won! You earned {reward} coins!"
+                    message = f"Nanalo ka! Nakakuha ka ng {reward} coins!"
 
-                game_over = True
-                reward_given = True  # ✅ Prevent Multiple Rewards
                 highest_level_unlocked = max(highest_level_unlocked, current_level + 1)
+                reward_given = True  # ✅ Prevent Multiple Rewards
+
+            game_over = True
+
 
         # Draw buttons for WIN/LOSS state
         if game_over:
-            if "won" in message.lower():
+            if "nanalo" in message.lower():
                 # Show next level or main menu buttons when the player wins
                 next_level_btn, main_menu_btn = draw_post_win_buttons(screen, WIDTH, HEIGHT, game_over=True, victory=True)
                 retry_btn = None
+            elif "sumuko" in message.lower():
+                # Immediately go to the main menu without displaying anything
+                game_over = True
+                reward_given = True  # Ensure no rewards are given on surrender
+                highest_level_unlocked = max(highest_level_unlocked, current_level)
+                pygame.time.wait(1000)
+                game_state = "menu" # Make sure the level progress is not lost
+                # No buttons or messages, just transition to the menu
+
             else:
                 # Show Retry and Main Menu buttons on Loss
                 retry_btn, main_menu_btn = draw_post_win_buttons(screen, WIDTH, HEIGHT, game_over=True, victory=False)
                 next_level_btn = None
+
         # Drawing the dialog box
         dialog_buttons = draw_dialog_box(
             screen, fight_mode, list(player.skills.keys()),
@@ -401,10 +442,10 @@ while running:
 
     # Display money
     if game_state == "menu" or (game_state == "game" and game_over):
-        draw_text(screen, f"Money: {money}", 10, 10)
+        draw_text(screen, f"Pera: {money}", 10, 10)
 
     elif game_state == "shop":  # Assuming you have a "shop" state for the shop screen
-        draw_text(screen, f"Money: {money}", 10, 10)
+        draw_text(screen, f"Pera: {money}", 10, 10)
         # Add other shop-related UI elements here (items, buttons, etc.)
 
 

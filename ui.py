@@ -71,28 +71,32 @@ def draw_health_bar(surface, rooster, x, y):
 
 # Main menu UI
 def draw_menu(screen, width):
-    title = font.render("Sabong Main Menu", True, BLACK)
-    screen.blit(title, (width // 2 - 120, 100))
-    start_btn_color = GREEN  # Set the button color from settings.py
+    title_text = "Sabong"
+    title_surface = font.render(title_text, True, BLACK)
+    title_x = (width - title_surface.get_width()) // 2
+    screen.blit(title_surface, (title_x, 100))
+
+    start_btn_color = GREEN
     roster_btn_color = BLUE
     shop_btn_color = ORANGE
     exit_btn_color = RED
 
-    start_btn = draw_button(screen, "Start Game", width // 2 - 100, 200, 200, 40, start_btn_color)
-    roster_btn = draw_button(screen, "Roster", width // 2 - 100, 260, 200, 40,roster_btn_color)
-    shop_btn = draw_button(screen, "Shop", width // 2 - 100, 320, 200, 40,shop_btn_color)
-    exit_btn = draw_button(screen, "Exit", width // 2 - 100, 380, 200, 40,exit_btn_color)
+
+    start_btn = draw_button(screen, "Simulan ang Laro", width // 2 - 100, 200, 200, 40, start_btn_color)
+    roster_btn = draw_button(screen, "Mga Manok", width // 2 - 100, 260, 200, 40,roster_btn_color)
+    shop_btn = draw_button(screen, "Tindahan", width // 2 - 100, 320, 200, 40,shop_btn_color)
+    exit_btn = draw_button(screen, "Lumabas", width // 2 - 100, 380, 200, 40,exit_btn_color)
 
     return start_btn, roster_btn, shop_btn, exit_btn
 
 # Shop UI
 def draw_shop(screen, inventory, player_money, width, height):
     # Title
-    title = font.render("Shop", True, WHITE)
+    title = font.render("Tindahan", True, WHITE)
     screen.blit(title, (width // 2 - 40, 50))
 
     # Item List (example items: healing potions)
-    items = [("Small Potion", 20), ("Large Potion", 50), ("Revive Stone", 100)]
+    items = [("Maliit na Potion", 20), ("Malaking Potion", 50)]
     buttons = []
     for i, (item_name, item_price) in enumerate(items):
         item_btn_rect = pygame.Rect(50, 120 + i * 60, 200, 40)
@@ -105,15 +109,15 @@ def draw_shop(screen, inventory, player_money, width, height):
     draw_text(screen, f"Coins: {player_money}", width - 150, 50)
 
     # Back Button
-    back_btn = draw_button(screen, "Back", width - 150, height - 60, 100, 40)
-    buttons.append((back_btn, "Back"))
+    back_btn = draw_button(screen, "Bumalik", width - 150, height - 60, 100, 40)
+    buttons.append((back_btn, "Bumalik"))
 
     return buttons
 
 # Level select UI: only levels up to highest_level are enabled
 def draw_level_select(screen, highest_level, max_levels=5):
     # Title
-    title = font.render("Select Level", True, WHITE)
+    title = font.render("Pumili ng Antas", True, WHITE)
     screen.blit(title, (WIDTH // 2 - 80, 50))
 
     buttons = []
@@ -131,21 +135,21 @@ def draw_level_select(screen, highest_level, max_levels=5):
         buttons.append((btn, lvl))
 
     # Back button
-    back_btn = draw_button(screen, "Back", WIDTH // 2 - 50, y + 120, 100, 40)
+    back_btn = draw_button(screen, "Bumalik", WIDTH // 2 - 50, y + 120, 100, 40)
     return buttons, back_btn
 
 # Roster selection UI
 def draw_roster(screen, unlocked_roosters, all_roosters, selected_rooster_name, width, height):
-    draw_text(screen, "Unlocked Roosters", 50, 50)
+    draw_text(screen, "Naka-unlock na mga Manok", 50, 50)
     buttons = []
     for i, name in enumerate(unlocked_roosters):
         rooster = all_roosters[name]
-        btn_rect = pygame.Rect(50, 100 + i * 60, 200, 40)
+        btn_rect = pygame.Rect(50, 100 + i * 60, 350, 50)
         pygame.draw.rect(screen, rooster.color, btn_rect)
-        draw_text(screen, name + (" (Selected)" if name == selected_rooster_name else ""),
+        draw_text(screen, name + (" (Pinili)" if name == selected_rooster_name else ""),
                   60, 110 + i * 60)
         buttons.append((btn_rect, name))
-    back_btn = draw_button(screen, "Back", width - 150, height - 60, 100, 40)
+    back_btn = draw_button(screen, "Bumalik", width - 150, height - 60, 100, 40)
     return buttons, back_btn
 
 # Battle dialog box UI
@@ -187,7 +191,7 @@ def draw_dialog_box(screen, fight_mode, moves, message, inventory, dialog_state,
                 screen.blit(text_surf, (btn_rect.x + (btn_rect.width - text_surf.get_width()) // 2,
                                          btn_rect.y + (btn_rect.height - text_surf.get_height()) // 2))
                 buttons.append((btn_rect, label))
-            cancel_btn = draw_button(screen, "Cancel", 490, 480, 220, 40, (255, 182, 193))
+            cancel_btn = draw_button(screen, "Kanselahin", 490, 480, 220, 40, (255, 182, 193))
             buttons.append((cancel_btn, "Cancel"))
 
         elif dialog_state == "confirm_surrender":
@@ -197,8 +201,8 @@ def draw_dialog_box(screen, fight_mode, moves, message, inventory, dialog_state,
                 screen.blit(font.render(line, True, BLACK), (50, 420 + i * 30))  # Draw text at position (50, 420)
 
             # Yes/No buttons for surrender confirmation
-            yes_btn = draw_button(screen, "Yes", 490, 430, 110, 40, (144, 238, 144))  # Light green
-            no_btn = draw_button(screen, "No", 630, 430, 110, 40, (255, 160, 122))    # Light red
+            yes_btn = draw_button(screen, "Oo", 490, 430, 110, 40, (144, 238, 144))  # Light green
+            no_btn = draw_button(screen, "Hindi", 630, 430, 110, 40, (255, 160, 122))    # Light red
             buttons.append((yes_btn, "Yes"))
             buttons.append((no_btn, "No"))
 
@@ -207,14 +211,14 @@ def draw_dialog_box(screen, fight_mode, moves, message, inventory, dialog_state,
             for i, line in enumerate(wrap_text(message, font, 400)[:4]):
                 screen.blit(font.render(line, True, BLACK), (50, 420 + i * 30))
 
-            top_labels = ["Fight", "Bag"]
-            colors = {"Fight": (255, 105, 97), "Bag": (218, 165, 32), "Surrender": (135, 206, 250)}
+            top_labels = ["Laban", "Bag"]
+            colors = {"Laban": (255, 105, 97), "Bag": (218, 165, 32), "Sumuko": (135, 206, 250)}
             for i, label in enumerate(top_labels):
                 x = 490 + i * 125
                 btn = draw_button(screen, label, x, 430, 110, 40, colors[label])
                 buttons.append((btn, label))
-            s_btn = draw_button(screen, "Surrender", 490, 480, 250, 40, colors["Surrender"])
-            buttons.append((s_btn, "Surrender"))
+            s_btn = draw_button(screen, "Sumuko", 490, 480, 250, 40, colors["Sumuko"])
+            buttons.append((s_btn, "Sumuko"))
 
     return buttons
 
@@ -239,18 +243,18 @@ def draw_bag_overlay(screen, inventory, selected_item):
         buttons.append((btn, item))
 
     # Detail pane and action buttons
-    detail = pygame.Rect(380, 160, 200, 120)
+    detail = pygame.Rect(380, 160, 300, 120)
     pygame.draw.rect(screen, (255, 248, 220), detail)
     pygame.draw.rect(screen, BLACK, detail, 2)
     if selected_item:
         screen.blit(font.render(selected_item, True, BLACK), (detail.x + 10, detail.y + 10))
-        desc = "Heals 20 HP" if "Small" in selected_item else "Heals 50 HP"
+        desc = "Pagalingin ng 20 HP" if "Small" in selected_item else "Pagalingin ng  50 HP"
         screen.blit(font.render(desc, True, BLACK), (detail.x + 10, detail.y + 50))
     else:
-        screen.blit(font.render("Select an item", True, BLACK), (detail.x + 10, detail.y + 10))
+        screen.blit(font.render("Pumili ng item", True, BLACK), (detail.x + 10, detail.y + 10))
 
-    use_btn = draw_button(screen, "Use", detail.x, detail.y + detail.height + 10, 90, 40, (144, 238, 144))
-    cancel_btn = draw_button(screen, "Cancel", detail.x + 110, detail.y + detail.height + 10, 90, 40, (255, 182, 193))
+    use_btn = draw_button(screen, "Gamitin", detail.x, detail.y + detail.height + 10, 90, 40, (144, 238, 144))
+    cancel_btn = draw_button(screen, "Kanselahin", detail.x + 110, detail.y + detail.height + 10, 90, 40, (255, 182, 193))
     buttons.append((use_btn, "Use"))
     buttons.append((cancel_btn, "Cancel"))
     return buttons
@@ -265,19 +269,19 @@ def draw_post_win_buttons(screen, width, height, game_over, victory):
     f = pygame.font.SysFont(None, 36)
 
     if victory:
-        screen.blit(f.render("Victory! Choose your next action:", True, (0, 0, 0)), (width // 2 - 180, 200))
-        next_btn = draw_button(screen, "Next Level", width // 2 - 150, 260, 140, 50, (173, 216, 230))
-        main_btn = draw_button(screen, "Main Menu", width // 2 + 10, 260, 140, 50, (255, 228, 181))
+        screen.blit(f.render("Tagumpay! Pumili ng iyong susunod na hakbang:", True, (0, 0, 0)), (width // 2 - 180, 200))
+        next_btn = draw_button(screen, "Susunod na Antas", width // 2 - 150, 260, 140, 50, (173, 216, 230))
+        main_btn = draw_button(screen, "Pangunahing Menu", width // 2 + 10, 260, 140, 50, (255, 228, 181))
         return next_btn, main_btn
     else:
-        screen.blit(f.render("Defeat! Choose your next action:", True, (0, 0, 0)), (width // 2 - 180, 200))
-        retry_btn = draw_button(screen, "Retry", width // 2 - 150, 260, 140, 50, (173, 216, 230))
-        main_btn = draw_button(screen, "Main Menu", width // 2 + 10, 260, 140, 50, (255, 228, 181))
+        screen.blit(f.render("Pagkatalo! Pumili ng iyong susunod na hakbang:", True, (0, 0, 0)), (width // 2 - 180, 200))
+        retry_btn = draw_button(screen, "Subukan muli", width // 2 - 150, 260, 140, 50, (173, 216, 230))
+        main_btn = draw_button(screen, "Pangunahing Menu", width // 2 + 10, 260, 140, 50, (255, 228, 181))
         return retry_btn, main_btn
 
 def draw_shop(screen, shop_items, width, height):
     font = pygame.font.SysFont(None, 36)
-    title = font.render("Shop", True, (0, 0, 0))
+    title = font.render("Tindahan", True, (0, 0, 0))
     screen.blit(title, (width // 2 - title.get_width() // 2, 50))
 
     button_rects = []
@@ -341,3 +345,94 @@ def draw_shop_confirmation(screen, message, width, height):
 
     screen.blit(yes_text, (yes_btn.x + (60 - yes_text.get_width()) // 2, yes_btn.y + 5))
     screen.blit(no_text, (no_btn.x + (60 - no_text.get_width()) // 2, no_btn.y + 5))
+
+
+def draw_rooster_skills_panel(screen, skills, selected_skill, width, height):
+    panel_rect = pygame.Rect(width - 250, 100, 230, 300)
+    pygame.draw.rect(screen, (220, 220, 220), panel_rect)
+    pygame.draw.rect(screen, BLACK, panel_rect, 2)
+
+    skill_buttons = []
+    y_offset = panel_rect.y + 10
+    for skill_name, skill_info in skills.items():
+        btn = pygame.Rect(panel_rect.x + 10, y_offset, panel_rect.width - 20, 40)
+        pygame.draw.rect(screen, GRAY, btn)
+        pygame.draw.rect(screen, BLACK, btn, 2)
+        text_surf = font.render(skill_name, True, BLACK)
+        screen.blit(text_surf, (btn.x + 5, btn.y + 5))
+        skill_buttons.append((btn, skill_name))
+
+        y_offset += 50
+
+    return skill_buttons
+
+def draw_skill_description_box(screen, selected_skill_name, skills, WIDTH, HEIGHT):
+    # Define the size and position for the description box
+    desc_rect = pygame.Rect(50, HEIGHT - 180, WIDTH - 350, 100)  # Reduced width to give space for damage & accuracy
+    pygame.draw.rect(screen, (245, 245, 220), desc_rect)
+    pygame.draw.rect(screen, BLACK, desc_rect, 2)
+
+    # Define the size and position for the damage and accuracy box (separate from the description)
+    stats_rect = pygame.Rect(WIDTH - 250, HEIGHT - 180, 230, 100)
+    pygame.draw.rect(screen, (245, 245, 220), stats_rect)
+    pygame.draw.rect(screen, BLACK, stats_rect, 2)
+
+    if selected_skill_name:
+        skill_info = skills[selected_skill_name]
+        name_text = font.render(f"{selected_skill_name}:", True, BLACK)
+
+        # Wrap the description text to fit within the left side of the box
+        wrapped_desc_lines = wrap_text(skill_info["description"], desc_rect.width - 20)
+
+        # Drawing skill name
+        screen.blit(name_text, (desc_rect.x + 10, desc_rect.y + 10))
+
+        # Drawing wrapped description lines with padding on the left
+        y_offset = desc_rect.y + 40
+        for line in wrapped_desc_lines:
+            wrapped_desc = font.render(line, True, BLACK)
+            screen.blit(wrapped_desc, (desc_rect.x + 10, y_offset))
+            y_offset += wrapped_desc.get_height() + 5  # Add spacing between lines
+
+        # No separator line below the description, just keep it neat
+
+        # Displaying Damage and Accuracy in the right box
+        damage_text = font.render(f"Pinsala: {skill_info['damage']}", True, BLACK)
+        accuracy_text = font.render(f"Katumpakan: {round((1 - skill_info['miss_chance']) * 100)}%", True, BLACK)
+
+        # Adjust the vertical position for damage and accuracy to avoid overlap
+        screen.blit(damage_text, (stats_rect.x + 10, stats_rect.y + 20))
+        screen.blit(accuracy_text, (stats_rect.x + 10, stats_rect.y + 60))
+
+    else:
+        wrapped_lines = wrap_text("Pumili ng isang kasanayan upang makita ang mga detalye", desc_rect.width - 20)
+        for i, line in enumerate(wrapped_lines):
+            prompt_surface = font.render(line, True, (100, 100, 100))
+            screen.blit(prompt_surface, (desc_rect.x + 10, desc_rect.y + 20 + i * 25))  # 25 = line spacing
+
+
+
+
+# Helper function to wrap text
+def wrap_text(text, max_width):
+    words = text.split(' ')
+    lines = []
+    current_line = ""
+
+    for word in words:
+        # Check if adding this word exceeds the width
+        test_line = f"{current_line} {word}".strip()
+        test_surface = font.render(test_line, True, BLACK)
+        if test_surface.get_width() <= max_width:
+            current_line = test_line
+        else:
+            if current_line:
+                lines.append(current_line)
+            current_line = word  # Start a new line with the current word
+
+    if current_line:  # Add the last line if there's any leftover text
+        lines.append(current_line)
+
+    return lines
+
+
