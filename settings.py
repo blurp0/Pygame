@@ -30,5 +30,8 @@ BROWN = (139, 69, 19)
 BEIGE = (245, 245, 220)
 NAVY = (0, 0, 128)
 
+HIGHLIGHT_COLOR = (255, 0, 0)
+BUTTON_COLOR = (0, 0, 255) 
+FONT_SIZE = 24 
 # Font
 font = pygame.font.SysFont(None, 36)

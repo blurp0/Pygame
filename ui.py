@@ -151,10 +151,24 @@ def draw_roster(screen, unlocked_roosters, all_roosters, selected_rooster_name, 
 # Battle dialog box UI
 def draw_dialog_box(screen, fight_mode, moves, message, inventory, dialog_state, selected_item=None):
     buttons = []
-    dialog_rect = pygame.Rect(30, 400, 740, 170)
+    dialog_rect = pygame.Rect(30, 400, 740, 170)  # Define dialog box
     pygame.draw.rect(screen, WHITE, dialog_rect)
     pygame.draw.rect(screen, BLACK, dialog_rect, 3)
-    pygame.draw.line(screen, BLACK, (470, 410), (470, 560), 2)
+    pygame.draw.line(screen, BLACK, (470, 410), (470, 560), 2)  # Line separating the left and right sides of the box
+
+    # Helper to wrap text inside dialog box
+    def wrap_text(txt, font_obj, max_w):
+        words = txt.split()
+        lines, cur = [], ''
+        for w in words:
+            test = cur + (' ' if cur else '') + w
+            if font_obj.size(test)[0] <= max_w:
+                cur = test
+            else:
+                lines.append(cur)
+                cur = w
+        if cur: lines.append(cur)
+        return lines
 
     if fight_mode:
         if dialog_state == "attack":
@@ -175,22 +189,21 @@ def draw_dialog_box(screen, fight_mode, moves, message, inventory, dialog_state,
                 buttons.append((btn_rect, label))
             cancel_btn = draw_button(screen, "Cancel", 490, 480, 220, 40, (255, 182, 193))
             buttons.append((cancel_btn, "Cancel"))
-        else:
-            # Message and main action buttons
-            # Wrap message
-            def wrap_text(txt, font_obj, max_w):
-                words = txt.split()
-                lines, cur = [], ''
-                for w in words:
-                    test = cur + (' ' if cur else '') + w
-                    if font_obj.size(test)[0] <= max_w:
-                        cur = test
-                    else:
-                        lines.append(cur)
-                        cur = w
-                if cur: lines.append(cur)
-                return lines
 
+        elif dialog_state == "confirm_surrender":
+            # Wrap the message on the left side of the dialog box
+            wrapped = wrap_text(message, font, 400)  # Max width for wrapping is 400
+            for i, line in enumerate(wrapped[:4]):  # Limit to 4 lines of text
+                screen.blit(font.render(line, True, BLACK), (50, 420 + i * 30))  # Draw text at position (50, 420)
+
+            # Yes/No buttons for surrender confirmation
+            yes_btn = draw_button(screen, "Yes", 490, 430, 110, 40, (144, 238, 144))  # Light green
+            no_btn = draw_button(screen, "No", 630, 430, 110, 40, (255, 160, 122))    # Light red
+            buttons.append((yes_btn, "Yes"))
+            buttons.append((no_btn, "No"))
+
+        else:
+            # Default dialog state: show message and action buttons
             for i, line in enumerate(wrap_text(message, font, 400)[:4]):
                 screen.blit(font.render(line, True, BLACK), (50, 420 + i * 30))
 
@@ -202,7 +215,10 @@ def draw_dialog_box(screen, fight_mode, moves, message, inventory, dialog_state,
                 buttons.append((btn, label))
             s_btn = draw_button(screen, "Surrender", 490, 480, 250, 40, colors["Surrender"])
             buttons.append((s_btn, "Surrender"))
+
     return buttons
+
+
 
 # Bag (inventory) overlay UI
 def draw_bag_overlay(screen, inventory, selected_item):

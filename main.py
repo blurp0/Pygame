@@ -143,7 +143,6 @@ shop_back_btn = None
 
 
 # Main game loop
-# Main game loop
 while running:
     screen.fill(PASTEL_GREEN)
 
@@ -172,7 +171,7 @@ while running:
                         game_state = "game"
                 if level_back_btn and level_back_btn.collidepoint(event.pos):
                     game_state = "menu"
-        
+
         # SHOP
         elif game_state == "shop":
             if event.type == pygame.MOUSEBUTTONDOWN:
@@ -195,7 +194,6 @@ while running:
                         confirm_purchase = False
                         item_to_buy = None
                         message = "Purchase Cancelled"
-                
                 else:
                     for btn_rect, item_name in shop_buttons:
                         if btn_rect.collidepoint(event.pos):
@@ -219,7 +217,7 @@ while running:
         elif game_state == "game":
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if not game_over and not (dialog_state == "waiting" or current_turn == "enemy"):
-                    # Handle Inventory and attack logic for buttons
+                    
                     if dialog_state == "bag":
                         for btn_rect, label in bag_buttons:
                             if btn_rect.collidepoint(event.pos):
@@ -239,37 +237,44 @@ while running:
                                     pending_enemy_attack = True
                                     current_turn = "enemy"
                                 elif label == "Cancel":
-                                    # Ensure Cancel button in bag state works correctly
                                     selected_item = None
                                     dialog_state = "waiting"
+
                     elif dialog_state == "attack":
-                        # Attack logic with additional Cancel functionality
                         for btn_rect, label in dialog_buttons:
-                            if btn_rect.collidepoint(event.pos) and label in player.skills:
-                                dmg = player.attack(enemy, label)
+                            if btn_rect.collidepoint(event.pos):
+                                if label in player.skills:
+                                    dmg = player.attack(enemy, label)
+                                    if dmg == 0:
+                                        message = f"{label} missed! The attack didn't land."
+                                    else:
+                                        enemy.health = max(enemy.health - dmg, 0)
+                                        message = f"You used {label}! Enemy took {dmg} damage."
 
-                                # Check if the damage is zero and update the message accordingly
-                                if dmg == 0:
-                                    message = f"{label} missed! The attack didn't land."
-                                else:
-                                    # Ensure the enemy's health doesn't go below 0
-                                    enemy.health = max(enemy.health - dmg, 0)  # Prevent enemy health from going below 0
-                                    message = f"You used {label}! Enemy took {dmg} damage."
+                                    dialog_state = "waiting"
+                                    enemy_attack_start_time = pygame.time.get_ticks()
+                                    pending_enemy_attack = True
+                                    current_turn = "enemy"
+                                    break
 
-                                dialog_state = "waiting"
-                                enemy_attack_start_time = pygame.time.get_ticks()
-                                pending_enemy_attack = True
-                                current_turn = "enemy"
-                                break  # Exit the loop after a valid attack is selected
+                                elif label == "Cancel":
+                                    dialog_state = "menu"
+                                    message = "You canceled the fight."
+                                    break
 
-                            elif btn_rect.collidepoint(event.pos) and label == "Cancel":
-                                # Handle Cancel button during attack
-                                dialog_state = "menu"  # Go back to menu or reset battle as needed
-                                message = "You canceled the fight."
-                                break  # Exit the loop once Cancel is clicked
+                    elif dialog_state == "confirm_surrender":
+                        for btn_rect, label in dialog_buttons:
+                            if btn_rect.collidepoint(event.pos):
+                                if label == "Yes":
+                                    message = "You surrendered!"
+                                    game_over = True
+                                    surrender_time = pygame.time.get_ticks()
+                                    dialog_state = "menu"
+                                elif label == "No":
+                                    dialog_state = "menu"
+                                    message = "Surrender canceled."
 
                     else:
-                        # General dialog logic for Fight, Bag, Surrender, Cancel
                         for btn_rect, label in dialog_buttons:
                             if btn_rect.collidepoint(event.pos):
                                 if label == "Fight":
@@ -278,21 +283,18 @@ while running:
                                 elif label == "Bag":
                                     dialog_state = "bag"
                                 elif label == "Surrender":
-                                    message = "You surrendered!"
-                                    game_over = True
-                                    surrender_time = pygame.time.get_ticks()
+                                    dialog_state = "confirm_surrender"
+                                    message = "Are you sure you want to surrender?"
                                 elif label == "Cancel":
-                                    dialog_state = "menu"  # Go back to menu or a neutral state
+                                    dialog_state = "menu"
 
                 else:
-                    # Handle the game over state and transitions to next level or main menu
                     if next_level_btn and next_level_btn.collidepoint(event.pos):
                         reset_game(current_level + 1)
                     elif main_menu_btn and main_menu_btn.collidepoint(event.pos):
                         game_state = "menu"
-                    # Retry logic here (ensure game restarts from the current level)
                     elif retry_btn and retry_btn.collidepoint(event.pos):
-                        reset_game(current_level)  # Restart from the current level
+                        reset_game(current_level)
 
     # DRAWING
     if game_state == "menu":
