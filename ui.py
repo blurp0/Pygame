@@ -16,7 +16,7 @@ def render_fitting_text(text, max_width, max_height, color=BLACK):
 def draw_button(screen, text, x, y, width, height, color=GRAY):
     btn_rect = pygame.Rect(x, y, width, height)
     mouse_pos = pygame.mouse.get_pos()
-    if btn_rect.collidepoint(mouse_pos):
+    if btn_rect.collidepoint(mouse_pos): 
         color = tuple(max(c - 30, 0) for c in color)
     pygame.draw.rect(screen, color, btn_rect)
     pygame.draw.rect(screen, BLACK, btn_rect, 2)
@@ -268,16 +268,42 @@ def draw_post_win_buttons(screen, width, height, game_over, victory):
 
     f = pygame.font.SysFont(None, 36)
 
+    def wrap_text(text, font_obj, max_width):
+        words = text.split()
+        lines, cur = [], ""
+        for word in words:
+            test_line = cur + (' ' if cur else '') + word
+            if font_obj.size(test_line)[0] <= max_width:
+                cur = test_line
+            else:
+                lines.append(cur)
+                cur = word
+        if cur:
+            lines.append(cur)
+        return lines
+
+    # Set message
     if victory:
-        screen.blit(f.render("Tagumpay! Pumili ng iyong susunod na hakbang:", True, (0, 0, 0)), (width // 2 - 180, 200))
+        message = "Tagumpay! Pumili ng iyong susunod na hakbang:"
+    else:
+        message = "Pagkatalo! Pumili ng iyong susunod na hakbang:"
+
+    # Wrap and draw message lines
+    wrapped_lines = wrap_text(message, f, 500)
+    for i, line in enumerate(wrapped_lines):
+        text_surf = f.render(line, True, (0, 0, 0))
+        screen.blit(text_surf, (width // 2 - text_surf.get_width() // 2, 180 + i * 30))
+
+    # Draw buttons
+    if victory:
         next_btn = draw_button(screen, "Susunod na Antas", width // 2 - 150, 260, 140, 50, (173, 216, 230))
         main_btn = draw_button(screen, "Pangunahing Menu", width // 2 + 10, 260, 140, 50, (255, 228, 181))
         return next_btn, main_btn
     else:
-        screen.blit(f.render("Pagkatalo! Pumili ng iyong susunod na hakbang:", True, (0, 0, 0)), (width // 2 - 180, 200))
         retry_btn = draw_button(screen, "Subukan muli", width // 2 - 150, 260, 140, 50, (173, 216, 230))
         main_btn = draw_button(screen, "Pangunahing Menu", width // 2 + 10, 260, 140, 50, (255, 228, 181))
         return retry_btn, main_btn
+
 
 def draw_shop(screen, shop_items, width, height):
     font = pygame.font.SysFont(None, 36)

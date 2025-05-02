@@ -1,5 +1,15 @@
 import pygame
 import sys
+import os
+
+def resource_path(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller."""
+    try:
+        base_path = sys._MEIPASS  # Set by PyInstaller
+    except AttributeError:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 import random
 from settings import *
 from rooster import ManokNaPuti, ManokNaPula, ManokNaItim, ManokNaBalbon, ChickenNiGlock9
@@ -21,9 +31,9 @@ zoom_factor = 0.95
 scaled_bg_width = int(WIDTH * zoom_factor)
 scaled_bg_height = int(HEIGHT * zoom_factor)
 # Load battle background once
-battle_bg = pygame.image.load(r"assets\GrassyField.webp").convert()
+battle_bg_path = resource_path("assets/GrassyField.png")
+battle_bg = pygame.image.load(battle_bg_path).convert()
 battle_bg = pygame.transform.scale(battle_bg, (scaled_bg_width, scaled_bg_height))
-
 bg_rect = pygame.Rect(-40, 150, scaled_bg_width, scaled_bg_height)
 
 # Initialize game states and data

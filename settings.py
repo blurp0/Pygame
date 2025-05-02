@@ -6,7 +6,7 @@ pygame.init()
 # Screen setup
 WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Sabong - Full Game")
+pygame.display.set_caption("Sabong")
 
 # Base Colors
 WHITE = (255, 255, 255)

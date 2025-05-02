@@ -1,4 +1,14 @@
 import pygame
+import sys
+import os
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS
+    except AttributeError:
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 import random
 from settings import font, WHITE
 
@@ -32,7 +42,7 @@ class Rooster:
         image_path = f"assets/{filename}"
 
         try:
-            self.image = pygame.image.load(image_path).convert_alpha()
+            self.image = pygame.image.load(resource_path(image_path)).convert_alpha()
             self.image = pygame.transform.scale(self.image, (150, 150))
             self.use_image = True
             print(f"Loaded image: {image_path}")
