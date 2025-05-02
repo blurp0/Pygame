@@ -19,7 +19,7 @@ class Rooster:
         self.is_enemy = is_enemy
 
         # Buffed stats for enemy
-        health_bonus = 50 if is_enemy else 0  # +50 HP for enemies
+        health_bonus= 50 if is_enemy else 0  # +50 HP for enemies
         self.max_health = max_health + health_bonus
         self.health = self.max_health
 
@@ -43,7 +43,7 @@ class Rooster:
 
         try:
             self.image = pygame.image.load(resource_path(image_path)).convert_alpha()
-            self.image = pygame.transform.scale(self.image, (150, 150))
+            self.image = pygame.transform.scale(self.image, (250, 250))
             self.use_image = True
             print(f"Loaded image: {image_path}")
         except Exception as e:
@@ -72,7 +72,7 @@ class Rooster:
         miss_chance = skill["miss_chance"]
 
         if self.is_enemy:
-            miss_chance *= 0.5  # Enemies are more accurate
+            miss_chance *= 0.8  # Enemies are more accurate
 
         if random.random() < miss_chance:
             print(f"{self.name}'s {skill_name} missed!")

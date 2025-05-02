@@ -4,7 +4,7 @@ import pygame
 pygame.init()
 
 # Screen setup
-WIDTH, HEIGHT = 800, 600
+WIDTH, HEIGHT = 1280, 720
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Sabong")
 

@@ -20,6 +20,7 @@ from ui import (
     draw_roster,
     draw_health_bar,
     draw_button,
+    draw_shop_message,
     draw_skill_description_box,
     draw_text,
     draw_dialog_box,
@@ -66,6 +67,8 @@ current_level = 1
 reward_given = False
 confirm_purchase = False
 item_to_buy = None
+show_shop_message = False
+message_duration = 800
 
 
 # Track progression and rewards
@@ -84,19 +87,28 @@ def enter_level_select():
     game_state = "level_select"
 
 def draw_shop(screen, items, width, height):
-    y = 100
+    # Use a bigger font
+    title_font = pygame.font.SysFont(None, 48)
+    button_font = pygame.font.SysFont(None, 36)
+
+    y = 200
     title = "Tindahan - I-click para Bumili"
-    title_surface = font.render(title, True, BLACK)
+    title_surface = title_font.render(title, True, BLACK)
     title_x = (width - title_surface.get_width()) // 2
-    screen.blit(title_surface, (title_x, 50))
+    screen.blit(title_surface, (title_x, 60))
 
     buttons = []
+    btn_width, btn_height = 360, 60
     for name, price in items.items():
-        btn = draw_button(screen, f"{name} - {price} coins", width // 2 - 120, y, 240, 40)
+        btn_x = (width - btn_width) // 2
+        btn = draw_button(screen, f"{name} - {price} coins", btn_x, y, btn_width, btn_height)
         buttons.append((btn, name))
-        y += 60
+        y += btn_height + 30  # More spacing
 
-    back_btn = draw_button(screen, "Bumalik", width // 2 - 100, y + 20, 200, 40)
+    # Centered and bigger "Bumalik" button
+    back_btn_x = (width - 300) // 2
+    back_btn = draw_button(screen, "Bumalik", back_btn_x, y + 30, 300, 60)
+
     return buttons, back_btn
 
 
@@ -109,28 +121,32 @@ def reset_game(level=1):
 
     # Initialize player based on selection
     if selected_rooster_name == "Manok na Puti":
-        player = ManokNaPuti(150, 300, is_enemy=False)
+        player = ManokNaPuti(200, 350, is_enemy=False)
     elif selected_rooster_name == "Manok na Pula":
-        player = ManokNaPula(150, 300, is_enemy=False)
+        player = ManokNaPula(200, 350, is_enemy=False)
     elif selected_rooster_name == "Manok na Itim":
-        player = ManokNaItim(150, 300, is_enemy=False)
+        player = ManokNaItim(200, 350, is_enemy=False)
     elif selected_rooster_name == "Manok na Balbon":
-        player = ManokNaBalbon(150, 300, is_enemy=False)
+        player = ManokNaBalbon(200, 350, is_enemy=False)
+    elif selected_rooster_name == "Chicken Ni Glock9":
+        player = ChickenNiGlock9(200, 350, is_enemy=False)
     else:
-        selected_rooster_name == "Chicken Ni Glock9"
-        player = ChickenNiGlock9(150, 300, is_enemy=False)
+        print(f"[Warning] Unknown rooster: {selected_rooster_name}, defaulting to Manok na Puti")
+        player = ManokNaPuti(200, 350, is_enemy=False)
+
     # Assign enemy based on level
     if level == 1:
-        enemy = ManokNaPuti(540, 70, is_enemy=True)
+        enemy = ManokNaPuti(820, 60, is_enemy=True)
     elif level == 2:
-        enemy = ManokNaPula(540, 70, is_enemy=True)
+        enemy = ManokNaPula(820, 60, is_enemy=True)
     elif level == 3:
-        enemy = ManokNaItim(540, 70, is_enemy=True)
+        enemy = ManokNaItim(820, 60, is_enemy=True)
     elif level == 4:
-        enemy  = ManokNaBalbon(540, 70, is_enemy=True)
+        enemy = ManokNaBalbon(820, 60, is_enemy=True)
     else:
-        enemy = ChickenNiGlock9(540, 70, is_enemy=True)
+        enemy = ChickenNiGlock9(820, 60, is_enemy=True)
 
+    # Reset battle states
     current_turn = "player"
     game_over = False
     dialog_state = "menu"
@@ -161,11 +177,14 @@ shop_buttons = []
 shop_back_btn = None
 retry_btn = None
 
+menu_bg_path = resource_path("assets/mainmenu.jpg")
+menu_bg = pygame.image.load(menu_bg_path).convert()
+menu_bg = pygame.transform.scale(menu_bg, (WIDTH, HEIGHT))
 
 
 # Main game loop
 while running:
-    screen.fill(PASTEL_GREEN)
+    screen.blit(menu_bg, (0, 0)) 
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -196,7 +215,11 @@ while running:
         # SHOP
         elif game_state == "shop":
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if confirm_purchase:
+                if show_shop_message:
+                    # If the message is being shown, dismiss on any click
+                    show_shop_message = False
+
+                elif confirm_purchase:
                     yes_rect = pygame.Rect(WIDTH//2 - 70, HEIGHT//2 + 20, 60, 30)
                     no_rect = pygame.Rect(WIDTH//2 + 10, HEIGHT//2 + 20, 60, 30)
 
@@ -210,20 +233,31 @@ while running:
                             message = "Nabigo ang Pagbili ng Item, Kulang ang Pera"
                         confirm_purchase = False
                         item_to_buy = None
+                        show_shop_message = True
+                        message_time = pygame.time.get_ticks()  # Start the timer when the message is shown
 
                     elif no_rect.collidepoint(event.pos):
                         confirm_purchase = False
                         item_to_buy = None
                         message = "Kinansela ang Pagbili"
+                        show_shop_message = True
+                        message_time = pygame.time.get_ticks()  # Start the timer
+
                 else:
                     for btn_rect, item_name in shop_buttons:
                         if btn_rect.collidepoint(event.pos):
                             confirm_purchase = True
                             item_to_buy = item_name
-                            message = f"Are you sure you want to purchase {item_name}?"
+                            message = f"Sigurado ka bang gusto mong bilhin ang {item_name}?"
 
                     if shop_back_btn and shop_back_btn.collidepoint(event.pos):
                         game_state = "menu"
+
+            # If a message is shown, check if 1.5 seconds have passed and close it
+            if show_shop_message:
+                current_time = pygame.time.get_ticks()
+                if current_time - message_time >= message_duration:
+                    show_shop_message = False  # Automatically close after 1.5 seconds
 
         # ROSTER
         elif game_state == "roster":
@@ -330,6 +364,8 @@ while running:
         shop_buttons, shop_back_btn = draw_shop(screen, shop_items, WIDTH, HEIGHT)
         if confirm_purchase:
             draw_shop_confirmation(screen, message, WIDTH, HEIGHT)
+        elif show_shop_message:
+            draw_shop_message(screen, message, WIDTH, HEIGHT)
     elif game_state == "roster":
         buttons, back_btn = draw_roster(screen, unlocked_roosters, all_roosters, selected_rooster_name, WIDTH, HEIGHT)
 
@@ -351,8 +387,8 @@ while running:
         screen.blit(battle_bg, (0, 0), bg_rect)
         player.draw(screen)
         enemy.draw(screen)
-        draw_health_bar(screen, player, 100, 240)
-        draw_health_bar(screen, enemy, 300, 30)
+        draw_health_bar(screen, player, 780, 370 , is_player=True)
+        draw_health_bar(screen, enemy, 100, 30, is_player=False)
 
         # Enemy attack delay
         if not game_over and current_turn == "enemy" and pending_enemy_attack:
@@ -414,22 +450,23 @@ while running:
         # Draw buttons for WIN/LOSS state
         if game_over:
             if "nanalo" in message.lower():
-                # Show next level or main menu buttons when the player wins
-                next_level_btn, main_menu_btn = draw_post_win_buttons(screen, WIDTH, HEIGHT, game_over=True, victory=True)
+                is_final = isinstance(enemy, ChickenNiGlock9)
+                next_level_btn, main_menu_btn = draw_post_win_buttons(
+                    screen, WIDTH, HEIGHT, game_over=True, victory=True, is_final_level=is_final
+                )
                 retry_btn = None
             elif "sumuko" in message.lower():
-                # Immediately go to the main menu without displaying anything
                 game_over = True
-                reward_given = True  # Ensure no rewards are given on surrender
+                reward_given = True
                 highest_level_unlocked = max(highest_level_unlocked, current_level)
                 pygame.time.wait(1000)
-                game_state = "menu" # Make sure the level progress is not lost
-                # No buttons or messages, just transition to the menu
-
+                game_state = "menu"
             else:
-                # Show Retry and Main Menu buttons on Loss
-                retry_btn, main_menu_btn = draw_post_win_buttons(screen, WIDTH, HEIGHT, game_over=True, victory=False)
+                retry_btn, main_menu_btn = draw_post_win_buttons(
+                    screen, WIDTH, HEIGHT, game_over=True, victory=False
+                )
                 next_level_btn = None
+
 
         # Drawing the dialog box
         dialog_buttons = draw_dialog_box(
