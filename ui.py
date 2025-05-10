@@ -1,4 +1,5 @@
 import pygame
+from rooster import Rooster
 from settings import *
 
 # Helper to fit text within a box
@@ -26,8 +27,8 @@ def draw_button(screen, text, x, y, width, height, color=GRAY):
     return btn_rect
 
 # Simple text drawing
-def draw_text(screen, text, x, y):
-    label = font.render(text, True, BLACK)
+def draw_text(screen, text, x, y , color):
+    label = font.render(text, True, color)
     screen.blit(label, (x, y))
 def draw_health_bar(surface, rooster, x, y, is_player=True):
     bar_width = 400
@@ -88,11 +89,10 @@ def draw_health_bar(surface, rooster, x, y, is_player=True):
     label_rect = health_text.get_rect()
     surface.blit(health_text, (x + bar_width - label_rect.width, bar_y + bar_height + 5))
 
-# Main menu UI
-def draw_menu(screen, width):
+def draw_menu(screen, width, height):
     # Title text and font size
     title_font = pygame.font.SysFont(None, 72)  # Bigger font for title
-    title_text = "Sabong"
+    title_text = "Sabong na di illegal"
     title_surface = title_font.render(title_text, True, BLACK)
     title_x = (width - title_surface.get_width()) // 2
     screen.blit(title_surface, (title_x, 100))
@@ -140,32 +140,157 @@ def draw_menu(screen, width):
 
         button_y += btn_height + button_spacing  # Update y position for next button
 
-    return buttons_rect  # Return the button rects for handling input
+    # Adding the "?" button for the tutorial at the top-right corner
+    tutorial_btn_rect = pygame.Rect(width - 100, 20, 60, 60)  # 50x50 button for the "?"
 
-# Shop UI
-def draw_shop(screen, inventory, player_money, width, height):
+    # Create a semi-transparent white background
+    tutorial_btn_surface = pygame.Surface((tutorial_btn_rect.width, tutorial_btn_rect.height), pygame.SRCALPHA)
+    tutorial_btn_surface.fill((255, 255, 255, 200))  # White with 50% opacity
+    screen.blit(tutorial_btn_surface, (tutorial_btn_rect.x, tutorial_btn_rect.y))
+
+    # Draw "?" symbol for tutorial button
+    question_mark_font = pygame.font.SysFont(None, 84)
+    question_mark_surface = question_mark_font.render("?", True, (0, 0, 0))  # Black text
+    screen.blit(question_mark_surface, (
+        tutorial_btn_rect.centerx - question_mark_surface.get_width() // 2,
+        tutorial_btn_rect.centery - question_mark_surface.get_height() // 2))
+
+    buttons_rect.append(tutorial_btn_rect)
+
+
+    return buttons_rect
+
+
+def draw_tutorial_overlay(screen, width, height, page_number, tutorial_pages):
+    # Function to wrap text inside the overlay
+    def wrap_text(text, font, max_width):
+        words = text.split(' ')  # Split text into words
+        lines = []
+        current_line = words[0]
+
+        for word in words[1:]:
+            # Check if adding the next word exceeds the max width
+            if font.size(current_line + ' ' + word)[0] <= max_width:
+                current_line += ' ' + word  # Add word to the current line
+            else:
+                lines.append(current_line)  # Add the current line to the lines list
+                current_line = word  # Start a new line with the current word
+
+        lines.append(current_line)  # Add the last line
+        return lines
+
+    # Overlay background (semi-transparent black)
+    overlay = pygame.Surface((width, height))
+    overlay.set_alpha(200)
+    overlay.fill((0, 0, 0))
+    screen.blit(overlay, (0, 0))
+
     # Title
-    title = font.render("Tindahan", True, WHITE)
-    screen.blit(title, (width // 2 - 40, 50))
+    tutorial_title_font = pygame.font.SysFont(None, 60)
+    tutorial_title_text = "Game Mechanics"
+    tutorial_title_surface = tutorial_title_font.render(tutorial_title_text, True, (255, 255, 255))
+    screen.blit(tutorial_title_surface, (width // 2 - tutorial_title_surface.get_width() // 2, 50))
 
-    # Item List (example items: healing potions)
-    items = [("Maliit na Potion", 20), ("Malaking Potion", 50)]
+    # Instructions for the current page
+    instructions_font = pygame.font.SysFont(None, 50)
+    padding = 200  # Padding on both left and right sides
+    max_width = width - padding * 2  # Maximum width for wrapping (with padding)
+    
+    current_instructions = tutorial_pages[page_number]
+    wrapped_lines = []
+
+    for instruction in current_instructions:
+        wrapped_lines.extend(wrap_text(instruction, instructions_font, max_width))  # Add wrapped lines
+    
+    line_spacing = 70
+    total_height = len(wrapped_lines) * line_spacing
+
+    # Center the block vertically and horizontally (text remains left-aligned with padding)
+    start_y = (height - total_height) // 2
+    block_x = padding  # Starting x position considering padding
+
+    for i, line in enumerate(wrapped_lines):
+        text_surface = instructions_font.render(line, True, (255, 255, 255))
+        y = start_y + i * line_spacing
+        screen.blit(text_surface, (block_x, y))
+
+    # Back button (Top-Right Corner)
+    back_btn_rect = pygame.Rect(width - 1250, 30, 100, 40)  # x stays the same, y is now 20 (top padding)
+    pygame.draw.rect(screen, (200, 0, 0), back_btn_rect)
+    back_btn_surface = pygame.font.SysFont(None, 35).render("Back", True, (255, 255, 255))
+    screen.blit(back_btn_surface, (back_btn_rect.centerx - back_btn_surface.get_width() // 2,
+                                   back_btn_rect.centery - back_btn_surface.get_height() // 2))
+
+    # Next button
+    font_size = 120
+    next_btn_rect = pygame.Rect(width - 100, height // 2 - 40, 50, 50)
+
+    # Create a semi-transparent white surface
+    btn_surface = pygame.Surface((next_btn_rect.width, next_btn_rect.height), pygame.SRCALPHA)
+    btn_surface.fill((255, 255, 255, 128))  # White with 50% opacity (128 out of 255)
+
+    # Blit the semi-transparent surface onto the main screen
+    screen.blit(btn_surface, (next_btn_rect.x, next_btn_rect.y))
+
+    # Render the black ">" symbol
+    next_btn_font = pygame.font.SysFont(None, font_size)
+    next_btn_surface = next_btn_font.render(">", True, (0, 0, 0))  # Black text
+
+    # Adjust vertical offset to move it up slightly if needed
+    y_offset = -5
+    screen.blit(next_btn_surface, (
+        next_btn_rect.centerx - next_btn_surface.get_width() // 2,
+        next_btn_rect.centery - next_btn_surface.get_height() // 2 + y_offset
+    ))
+
+    # Previous button
+    font_size = 120
+    prev_btn_rect = pygame.Rect(50, height // 2 - 40, 50, 50)  # Adjusted height and width
+
+    # Create a semi-transparent white surface
+    prev_surface = pygame.Surface((prev_btn_rect.width, prev_btn_rect.height), pygame.SRCALPHA)
+    prev_surface.fill((255, 255, 255, 128))  # White with 50% opacity
+    screen.blit(prev_surface, (prev_btn_rect.x, prev_btn_rect.y))
+
+    # Render the black "<" symbol
+    prev_btn_font = pygame.font.SysFont(None, font_size)
+    prev_btn_symbol = prev_btn_font.render("<", True, (0, 0, 0))  # Black text
+
+    # Move symbol up slightly
+    y_offset = -5
+    screen.blit(prev_btn_symbol, (
+        prev_btn_rect.centerx - prev_btn_symbol.get_width() // 2,
+        prev_btn_rect.centery - prev_btn_symbol.get_height() // 2 + y_offset
+    ))
+
+
+    return back_btn_rect, prev_btn_rect, next_btn_rect
+
+def draw_shop(screen, items, width, height):
+    # Use a bigger font
+    title_font = pygame.font.SysFont(None, 48)
+    button_font = pygame.font.SysFont(None, 36)
+
+    y = 200
+    title = "Tindahan - I-click para Bumili"
+    title_surface = title_font.render(title, True, BLACK)
+    title_x = (width - title_surface.get_width()) // 2
+    screen.blit(title_surface, (title_x, 60))
+
     buttons = []
-    for i, (item_name, item_price) in enumerate(items):
-        item_btn_rect = pygame.Rect(50, 120 + i * 60, 200, 40)
-        pygame.draw.rect(screen, GRAY, item_btn_rect)
-        pygame.draw.rect(screen, BLACK, item_btn_rect, 2)
-        screen.blit(font.render(f"{item_name} - {item_price} Coins", True, BLACK), (item_btn_rect.x + 10, item_btn_rect.y + 10))
-        buttons.append((item_btn_rect, item_name, item_price))
+    btn_width, btn_height = 360, 60
+    for name, price in items.items():
+        btn_x = (width - btn_width) // 2
+        btn = draw_button(screen, f"{name} - {price} coins", btn_x, y, btn_width, btn_height)
+        buttons.append((btn, name))
+        y += btn_height + 30  # More spacing
 
-    # Player Money Display
-    draw_text(screen, f"Coins: {player_money}", width - 150, 50)
+    # Centered and bigger "Bumalik" button
+    back_btn_x = (width - 300) // 2
+    back_btn = draw_button(screen, "Bumalik", back_btn_x, y + 30, 300, 60)
 
-    # Back Button
-    back_btn = draw_button(screen, "Bumalik", width - 150, height - 60, 100, 40)
-    buttons.append((back_btn, "Bumalik"))
+    return buttons, back_btn
 
-    return buttons
 
 def draw_level_select(screen, highest_level, max_levels=5):
     # Title
@@ -209,25 +334,80 @@ def draw_level_select(screen, highest_level, max_levels=5):
 
 # Roster selection UI
 def draw_roster(screen, unlocked_roosters, all_roosters, selected_rooster_name, width, height):
-    draw_text(screen, "Naka-unlock na mga Manok", 50, 50)
+    draw_text(screen, "Naka-unlock na mga Manok", 50, 50,BLACK)
     buttons = []
+
+    # Button dimensions for 2x3 grid
+    button_width, button_height = 400, 100
+    img_size = 80
+    button_color = (245, 245, 220)
+
+    rows = 3
+    cols = 2
+
+    loaded_count = 0
+    total_to_load = len(unlocked_roosters)
+
     for i, name in enumerate(unlocked_roosters):
         rooster = all_roosters[name]
-        btn_rect = pygame.Rect(50, 100 + i * 60, 350, 50)
-        pygame.draw.rect(screen, rooster.color, btn_rect)
-        draw_text(screen, name + (" (Pinili)" if name == selected_rooster_name else ""),
-                  60, 110 + i * 60)
+
+        base_name = rooster.name.lower().replace(' ', '_')
+        role = "enemy"
+        cache_key = f"{base_name}_{role}"
+
+        # Preload if not cached yet
+        if cache_key not in Rooster.image_cache:
+            rooster_class = type(rooster)
+            _ = rooster_class(0, 0, is_enemy=True)  # This should trigger image caching
+
+        # If now cached, count it
+        if cache_key in Rooster.image_cache:
+            loaded_count += 1
+
+        # Early break if all are cached
+        if loaded_count == total_to_load:
+            break
+
+    # Now draw everything (no image loading needed anymore)
+    for i, name in enumerate(unlocked_roosters):
+        rooster = all_roosters[name]
+
+        row = i // cols
+        col = i % cols
+        x_pos = 50 + col * (button_width + 20)
+        y_pos = 100 + row * (button_height + 20)
+
+        btn_rect = pygame.Rect(x_pos, y_pos, button_width, button_height)
+        pygame.draw.rect(screen, button_color, btn_rect)
+
+        base_name = rooster.name.lower().replace(' ', '_')
+        cache_key = f"{base_name}_enemy"
+        image = Rooster.image_cache.get(cache_key)
+
+        if image:
+            img_scaled = pygame.transform.scale(image, (img_size, img_size))
+            screen.blit(img_scaled, (x_pos + 10, y_pos + 10))
+
+        draw_text(
+            screen,
+            name + (" (Pinili)" if name == selected_rooster_name else ""),
+            x_pos + img_size + 10,
+            y_pos + (button_height // 2) - 10, BLACK
+        )
+
         buttons.append((btn_rect, name))
+
     back_btn = draw_button(screen, "Bumalik", width - 150, height - 60, 100, 40)
     return buttons, back_btn
 
+
 # Battle dialog box UI
-def draw_dialog_box(screen, fight_mode, moves, message, inventory, dialog_state, selected_item=None):
+def draw_dialog_box(screen, fight_mode, move_labels, move_data, message, inventory, dialog_state, selected_item=None):
     buttons = []
     dialog_rect = pygame.Rect(40, 500, 1175, 180)  # Dialog box
     pygame.draw.rect(screen, WHITE, dialog_rect)
     pygame.draw.rect(screen, BLACK, dialog_rect, 3)
-    pygame.draw.line(screen, BLACK, (820, 500), (820, 680), 2)  # Divider moved right
+    pygame.draw.line(screen, BLACK, (820, 500), (820, 680), 2)  # Divider
 
     def wrap_text(txt, font_obj, max_w):
         words = txt.split()
@@ -244,10 +424,9 @@ def draw_dialog_box(screen, fight_mode, moves, message, inventory, dialog_state,
 
     if fight_mode:
         if dialog_state == "attack":
-            # Adjust positioning for the left side of the dialog box (before x=820)
-            for i, label in enumerate(moves[:4]):
+            for i, label in enumerate(move_labels[:4]):
                 row, col = divmod(i, 2)
-                x = 60 + col * 370  # Adjusted to start from the left side (before the divider at x=820)
+                x = 60 + col * 370
                 y = 520 + row * 80
                 btn_rect = pygame.Rect(x, y, 320, 60)
                 color = GRAY
@@ -255,15 +434,61 @@ def draw_dialog_box(screen, fight_mode, moves, message, inventory, dialog_state,
                     color = tuple(max(c - 30, 0) for c in color)
                 pygame.draw.rect(screen, color, btn_rect)
                 pygame.draw.rect(screen, BLACK, btn_rect, 2)
-                text_surf = render_fitting_text(label, btn_rect.width, btn_rect.height)
-                screen.blit(text_surf, (btn_rect.x + (btn_rect.width - text_surf.get_width()) // 2,
-                                        btn_rect.y + (btn_rect.height - text_surf.get_height()) // 2))
+
+                # Skill stats
+                skill = move_data[label]
+                damage = skill["damage"]
+                acc = int((1 - skill["miss_chance"]) * 100)
+                cd = skill["cooldown"]
+                cd_left = skill["cooldown_counter"]
+
+                # Cooldown display logic
+                if cd_left == 0:
+                    cd_text = "CD: Ready"
+                    cd_color = (0, 128, 0)  # Green
+                else:
+                    cd_text = f"CD: {cd_left}/{cd}"
+                    cd_color = (200, 0, 0)  # Red
+
+                # Text rendering
+                title_font = pygame.font.SysFont("arial", 25, bold=True)
+                stat_font = pygame.font.SysFont("arial", 14)
+
+                # Text rendering
+                title_font = pygame.font.SysFont("arial", 25, bold=True)
+                stat_font = pygame.font.SysFont("arial", 14)
+
+                # Skill name (centered)
+                name_surf = title_font.render(label, True, BLACK)
+                name_x = btn_rect.centerx - name_surf.get_width() // 1.3  # Center the name
+                screen.blit(name_surf, (name_x, btn_rect.y + 3))
+
+                # **Divider between skill name and stats**: Placing the divider correctly
+                divider_x = btn_rect.x + btn_rect.width * 3 / 4  # Move divider after the skill name (1/3 of the button width)
+                pygame.draw.line(screen, BLACK, (divider_x, btn_rect.y), (divider_x, btn_rect.y + btn_rect.height), 2)
+
+                # **Narrower stats container**: 1/4 of the button width
+                stats_width = btn_rect.width / 4  # Narrower width for the stats container
+                stats_x = divider_x + 5  # Placing stats right after the divider
+
+                # Position stats slightly higher
+                stats_y_offset = 3
+
+                # DMG, ACC, CD (right side of the button)
+                dmg_surf = stat_font.render(f"DMG: {damage}", True, BLACK)
+                acc_surf = stat_font.render(f"ACC: {acc}%", True, BLACK)
+                cd_surf = stat_font.render(cd_text, True, cd_color)
+
+                # Draw the skill stats inside the narrower container
+                screen.blit(dmg_surf, (stats_x + 10, btn_rect.y + stats_y_offset))
+                screen.blit(acc_surf, (stats_x + 10, btn_rect.y + stats_y_offset + 18))
+                screen.blit(cd_surf, (stats_x + 10, btn_rect.y + stats_y_offset + 36))
+
                 buttons.append((btn_rect, label))
 
-            # Move the "Cancel" button to the right side, aligned with the right side of the dialog box
-            cancel_btn = draw_button(screen, "Kanselahin", 900, 550, 200, 80 , (255, 182, 193))  # Positioned on the right side now
+            # Cancel button
+            cancel_btn = draw_button(screen, "Kanselahin", 900, 550, 200, 80 , (255, 182, 193))
             buttons.append((cancel_btn, "Cancel"))
-
 
         elif dialog_state == "confirm_surrender":
             wrapped = wrap_text(message, font, 740)
@@ -290,6 +515,7 @@ def draw_dialog_box(screen, fight_mode, moves, message, inventory, dialog_state,
             buttons.append((s_btn, "Sumuko"))
 
     return buttons
+
 
 # Bag (inventory) overlay UI
 def draw_bag_overlay(screen, inventory, selected_item):
@@ -319,7 +545,7 @@ def draw_bag_overlay(screen, inventory, selected_item):
 
     if selected_item:
         screen.blit(font.render(selected_item, True, BLACK), (detail.x + 10, detail.y + 10))
-        desc = "Pagalingin ng 20 HP" if "Small" in selected_item else "Pagalingin ng 50 HP"
+        desc = "Pagalingin ng 50 HP" if "Maliit" in selected_item else "Pagalingin ng 80 HP"
         screen.blit(font.render(desc, True, BLACK), (detail.x + 10, detail.y + 50))
     else:
         screen.blit(font.render("Pumili ng item", True, BLACK), (detail.x + 10, detail.y + 10))
@@ -442,25 +668,38 @@ def draw_shop_confirmation(screen, message, width, height):
     screen.blit(yes_text, (yes_btn.x + (btn_width - yes_text.get_width()) // 2, yes_btn.y + (btn_height - yes_text.get_height()) // 2))
     screen.blit(no_text, (no_btn.x + (btn_width - no_text.get_width()) // 2, no_btn.y + (btn_height - no_text.get_height()) // 2))
 
-
 def draw_rooster_skills_panel(screen, skills, selected_skill, width, height):
-    panel_rect = pygame.Rect(width - 250, 100, 230, 300)
+    panel_width = 300  # Adjust the panel width
+    panel_height = 250  # Adjust the panel height
+    panel_x = width - panel_width - 20  # Move the panel a little to the left
+    panel_y = 100  # Move the panel further down from the top of the screen
+
+    panel_rect = pygame.Rect(panel_x, panel_y, panel_width, panel_height)
     pygame.draw.rect(screen, (220, 220, 220), panel_rect)
     pygame.draw.rect(screen, BLACK, panel_rect, 2)
 
     skill_buttons = []
     y_offset = panel_rect.y + 10
+    button_height = 50  # Adjust button height
+    button_padding = 5  # Add padding between the button and text
+
     for skill_name, skill_info in skills.items():
-        btn = pygame.Rect(panel_rect.x + 10, y_offset, panel_rect.width - 20, 40)
+        btn = pygame.Rect(panel_rect.x + 10, y_offset, panel_rect.width - 20, button_height)
         pygame.draw.rect(screen, GRAY, btn)
         pygame.draw.rect(screen, BLACK, btn, 2)
+        
+        # Render text for skill
         text_surf = font.render(skill_name, True, BLACK)
-        screen.blit(text_surf, (btn.x + 5, btn.y + 5))
+        text_rect = text_surf.get_rect()
+        text_rect.center = btn.center  # Center the text within the button
+        screen.blit(text_surf, text_rect.topleft)
+
         skill_buttons.append((btn, skill_name))
 
-        y_offset += 50
+        y_offset += button_height + 10  # Add more space between buttons if needed
 
     return skill_buttons
+
 
 def draw_skill_description_box(screen, selected_skill_name, skills, WIDTH, HEIGHT):
     # Define the size and position for the description box

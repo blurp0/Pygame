@@ -1,71 +1,36 @@
-# Initial inventory setup
 inventory = {
-    "Maliit na Potion": 2,
-    "Malaking Potion": 1
+    "Maliit na Potion": 30,
+    "Malaking Potion": 20
 }
 
+shop_items = {
+    "Maliit na Potion": 10,
+    "Malaking Potion": 20
+}
 
-# Use potion function that updates the player's health
-def use_potion(player, item):
-    if item in inventory and inventory[item] > 0:
-        if item == "Maliit na Potion":
-            player.health = min(player.health + 20, 100)
-            inventory[item] -= 1
-            return "Ginamit mo Maliit na Potion! Naghilom ng 20 HP."
-        elif item == "Malaking potion":
-            player.health = min(player.health + 50, 100)
-            inventory[item] -= 1
-            return "Ginamit mo Malaking potion! Naghilom 50 HP."
-    return f"Wala ka nito {item} o wala nang stock."
+def can_afford(item_name, money):
+    return money >= shop_items.get(item_name, float('inf'))
 
-
-# Add item to inventory
-def add_item(item, quantity=1):
-    if item in inventory:
-        inventory[item] += quantity
+def buy_item(item_name, inventory, money):
+    cost = shop_items.get(item_name)
+    if cost is not None and money >= cost:
+        inventory[item_name] = inventory.get(item_name, 0) + 1
+        return inventory, money - cost, "Matagumpay na Nabili ang Item"
     else:
-        inventory[item] = quantity
+        return inventory, money, "Nabigo ang Pagbili ng Item, Kulang ang Pera"
 
+def use_item(item_name, inventory, player, small_potion=50, big_potion=80):
+    if inventory.get(item_name, 0) <= 0:
+        return "Wala ka nang {}!".format(item_name), inventory, player
 
-# Remove item from inventory
-def remove_item(item, quantity=1):
-    if item in inventory and inventory[item] >= quantity:
-        inventory[item] -= quantity
-        if inventory[item] == 0:
-            del inventory[item]
+    if item_name == "Maliit na Potion":
+        player.health = min(player.health + small_potion, player.max_health)
+        message = f"Ginamit mo ang {item_name}! Gumaling ng {small_potion} HP!"
+    elif item_name == "Malaking Potion":
+        player.health = min(player.health + big_potion, player.max_health)
+        message = f"Ginamit mo ang {item_name}! Gumaling ng {big_potion} HP!"
     else:
-        return f"Hindi sapat {item} sa imbentaryo."
+        return "Hindi kilalang item.", inventory, player
 
-
-# Check if an item exists in inventory
-def check_item(item):
-    return item in inventory and inventory[item] > 0
-
-
-# Display inventory items
-def display_inventory():
-    if inventory:
-        inventory_list = [f"{item}: {quantity}" for item, quantity in inventory.items()]
-        return "\n".join(inventory_list)
-    return "Walang laman ang imbentaryo."
-
-
-# Example of usage (simulating a player and using potions)
-class Player:
-    def __init__(self):
-        self.health = 100  # Initial health
-
-
-# Simulating player usage of items
-player = Player()
-
-# Test item usage
-print(use_potion(player, "Maliit Potion"))  # Should heal and reduce potion count
-print(use_potion(player, "Large Potion"))  # Should heal and reduce potion count
-
-# Add and remove items from inventory
-add_item("Maliit Potion", 3)
-remove_item("Malaking potion", 1)
-
-# Check inventory display
-print(display_inventory())
+    inventory[item_name] -= 1
+    return message, inventory, player
