@@ -90,75 +90,110 @@ def draw_health_bar(surface, rooster, x, y, is_player=True):
     surface.blit(health_text, (x + bar_width - label_rect.width, bar_y + bar_height + 5))
 
 def draw_menu(screen, width, height):
-    # Title text and font size
-    title_font = pygame.font.SysFont(None, 72)  # Bigger font for title
-    title_text = "Sabong na di illegal"
-    title_surface = title_font.render(title_text, True, BLACK)
-    title_x = (width - title_surface.get_width()) // 2
-    screen.blit(title_surface, (title_x, 100))
+    
+    CONTAINER_BG = (30, 30, 30, 180)  # Dark with some transparency
 
-    # Button text font size (changed to 45)
+    # Title settings
+    title_font = pygame.font.SysFont("impact", 72)  # Bold font for strong presence
+    title_text = "Manok Masters"
+    shadow_surface = title_font.render(title_text, True, RED)
+    title_surface = title_font.render(title_text, True, YELLOW)
+
+    # Tagline
+    tagline_font = pygame.font.SysFont("arial", 28)
+    tagline_text = "Laban kung laban, walang atrasan!"
+    tagline_surface = tagline_font.render(tagline_text, True, WHITE)
+
+    # Calculate container size based on title and tagline sizes + padding
+    padding_x = 40
+    padding_y = 20
+    container_width = max(title_surface.get_width(), tagline_surface.get_width()) + padding_x * 2
+    container_height = title_surface.get_height() + tagline_surface.get_height() + padding_y * 3
+
+    container_x = (width - container_width) // 2
+    container_y = 80  # Slightly above the title Y position
+
+    # Create container surface with alpha for transparency
+    container_surface = pygame.Surface((container_width, container_height), pygame.SRCALPHA)
+    container_surface.fill((0, 0, 0, 0))  # Fully transparent background
+
+    # Draw rounded rectangle as container background with bigger border radius
+    pygame.draw.rect(container_surface, CONTAINER_BG, container_surface.get_rect(), border_radius=25)
+
+    # Blit container onto main screen
+    screen.blit(container_surface, (container_x, container_y))
+
+    # Draw shadow (offset by 4 pixels)
+    shadow_x = container_x + (container_width - shadow_surface.get_width()) // 2 + 4
+    shadow_y = container_y + padding_y + 4
+    screen.blit(shadow_surface, (shadow_x, shadow_y))
+
+    # Draw title
+    title_x = container_x + (container_width - title_surface.get_width()) // 2
+    title_y = container_y + padding_y
+    screen.blit(title_surface, (title_x, title_y))
+
+    # Draw tagline below title with some vertical spacing
+    tagline_x = container_x + (container_width - tagline_surface.get_width()) // 2
+    tagline_y = title_y + title_surface.get_height() + padding_y
+    screen.blit(tagline_surface, (tagline_x, tagline_y))
+
+    # --- BUTTON SECTION ---
     button_font = pygame.font.SysFont(None, 45)  # Font for buttons with bigger size
 
-    start_btn_color = GREEN
-    roster_btn_color = BLUE
-    shop_btn_color = ORANGE
-    exit_btn_color = RED
+    start_btn_color = (0, 200, 0)  # GREEN
+    roster_btn_color = (0, 100, 255)  # BLUE
+    shop_btn_color = (255, 140, 0)  # ORANGE
+    exit_btn_color = (200, 0, 0)  # RED
 
     # Button labels
     buttons = [
-        ("Simulan ang Laro", start_btn_color),
+        ("Laban na!", start_btn_color),
         ("Mga Manok", roster_btn_color),
         ("Tindahan", shop_btn_color),
         ("Lumabas", exit_btn_color)
     ]
 
-    # Starting position for buttons
-    button_y = 200
+    # Starting position for buttons (adjusted for container height)
+    button_y = container_y + container_height + 40
     button_spacing = 20  # Spacing between buttons
 
-    # Draw buttons with dynamically adjusted size based on text length
     buttons_rect = []
     for label, color in buttons:
-        btn_width, btn_height = button_font.size(label)  # Get the size of the label text
-        btn_width += 60  # Add padding (horizontal)
-        btn_height += 40  # Add padding (vertical)
+        btn_width, btn_height = button_font.size(label)
+        btn_width += 60
+        btn_height += 40
 
-        # Create button rect
         button_rect = pygame.Rect(width // 2 - btn_width // 2, button_y, btn_width, btn_height)
 
-        # Draw the button background (colored)
-        pygame.draw.rect(screen, color, button_rect)
+        # Draw button background
+        pygame.draw.rect(screen, color, button_rect, border_radius=10)
 
-        # Draw button text
-        btn_label_surface = button_font.render(label, True, (255, 255, 255))  # White text for buttons
+        # Draw text
+        btn_label_surface = button_font.render(label, True, WHITE)
         btn_label_x = button_rect.centerx - btn_label_surface.get_width() // 2
         btn_label_y = button_rect.centery - btn_label_surface.get_height() // 2
         screen.blit(btn_label_surface, (btn_label_x, btn_label_y))
 
         buttons_rect.append(button_rect)
+        button_y += btn_height + button_spacing
 
-        button_y += btn_height + button_spacing  # Update y position for next button
-
-    # Adding the "?" button for the tutorial at the top-right corner
-    tutorial_btn_rect = pygame.Rect(width - 100, 20, 60, 60)  # 50x50 button for the "?"
-
-    # Create a semi-transparent white background
+    # --- TUTORIAL BUTTON SECTION ---
+    tutorial_btn_rect = pygame.Rect(width - 100, 20, 60, 60)
     tutorial_btn_surface = pygame.Surface((tutorial_btn_rect.width, tutorial_btn_rect.height), pygame.SRCALPHA)
-    tutorial_btn_surface.fill((255, 255, 255, 200))  # White with 50% opacity
+    tutorial_btn_surface.fill((255, 255, 255, 200))  # Semi-transparent white
     screen.blit(tutorial_btn_surface, (tutorial_btn_rect.x, tutorial_btn_rect.y))
 
-    # Draw "?" symbol for tutorial button
     question_mark_font = pygame.font.SysFont(None, 84)
-    question_mark_surface = question_mark_font.render("?", True, (0, 0, 0))  # Black text
+    question_mark_surface = question_mark_font.render("?", True, BLACK)
     screen.blit(question_mark_surface, (
         tutorial_btn_rect.centerx - question_mark_surface.get_width() // 2,
         tutorial_btn_rect.centery - question_mark_surface.get_height() // 2))
 
     buttons_rect.append(tutorial_btn_rect)
 
-
     return buttons_rect
+
 
 
 def draw_tutorial_overlay(screen, width, height, page_number, tutorial_pages):

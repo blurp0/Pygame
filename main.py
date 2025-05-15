@@ -47,7 +47,7 @@ all_roosters = {
 tutorial_page = 0 
 tutorial_pages = [
     [
-        "1. Simulan ang Laro: Start a new game.",
+        "1. Laban na!: Start a new game.",
         "2. Mga Manok: Pili lang ng manok na gusto mong gamitin.",
         "3. Tindahan: Bumili ng potions at ibang gamit para makatulong sa laban.",
         "4. Lumabas: Exit the game anytime.",
@@ -68,7 +68,7 @@ tutorial_pages = [
 
 
 
-unlocked_roosters = ["Manok na Puti"]
+unlocked_roosters = ["Manok na Puti","Manok na Pula","Manok na Itim","Manok na Balbon","Chicken Ni Glock9"]
 selected_rooster_name = "Manok na Puti"
 # Core game state
 game_state = "menu"

@@ -3,10 +3,10 @@ import pygame
 # Initialize Pygame
 pygame.init()
 
-# Screen setup
+# Fullscreen setup
 WIDTH, HEIGHT = 1280, 720
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Sabong")
+screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.FULLSCREEN)
+pygame.display.set_caption("Manok Masters")
 
 # Base Colors
 WHITE = (255, 255, 255)
@@ -29,9 +29,12 @@ DARK_GREEN = (0, 100, 0)
 BROWN = (139, 69, 19)
 BEIGE = (245, 245, 220)
 NAVY = (0, 0, 128)
+YELLOW = (255, 215, 0)
+RED = (200, 0, 0)
 
 HIGHLIGHT_COLOR = (255, 0, 0)
 BUTTON_COLOR = (0, 0, 255) 
 FONT_SIZE = 24 
+
 # Font
 font = pygame.font.SysFont(None, 36)
