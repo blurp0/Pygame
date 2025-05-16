@@ -68,7 +68,7 @@ tutorial_pages = [
 
 
 
-unlocked_roosters = ["Manok na Puti","Manok na Pula","Manok na Itim","Manok na Balbon","Chicken Ni Glock9"]
+unlocked_roosters = ["Manok na Puti"]
 selected_rooster_name = "Manok na Puti"
 # Core game state
 game_state = "menu"
@@ -103,6 +103,9 @@ post_enemy_message_delay = True
 enemy_message_start_time = 0
 enemy_message_duration = 2000 
 mouse_clicked = False  
+loss_music_played = False
+
+
 
 
 # Level select transition
@@ -113,9 +116,10 @@ def enter_level_select():
 def reset_game(level=1):
     global player, enemy, current_turn, game_over, message, dialog_state, fight_mode
     global selected_item, surrender_time, pending_enemy_attack, enemy_attack_start_time, current_level
-    global reward_given
+    global reward_given, unlocked_roosters, boost_if_new
 
     current_level = level
+    boost_if_new = False
 
     # Initialize player based on selection
     if selected_rooster_name == "Manok na Puti":
@@ -144,6 +148,10 @@ def reset_game(level=1):
     else:
         enemy = ChickenNiGlock9(820, 60, is_enemy=True)
 
+    # Conditionally boost enemy if it's not yet unlocked
+    if enemy.name not in unlocked_roosters and enemy.name != "Manok na Puti":
+        enemy._boost_skills()
+
     # Reset battle states
     current_turn = "player"
     game_over = False
@@ -158,6 +166,8 @@ def reset_game(level=1):
 
 # Start at the highest unlocked level
 reset_game(highest_level_unlocked)
+
+
 
 # Main loop
 clock = pygame.time.Clock()
@@ -180,6 +190,26 @@ big_potion = 80
 menu_bg_path = resource_path("assets/mainmenu.jpg")
 menu_bg = pygame.image.load(menu_bg_path).convert()
 menu_bg = pygame.transform.scale(menu_bg, (WIDTH, HEIGHT))
+
+pygame.mixer.init()
+healing_sound_path = resource_path("assets/audio/healing.wav")
+healing_sound = pygame.mixer.Sound(healing_sound_path)
+healing_sound.set_volume(10.0)
+
+pygame.mixer.music.load("assets/audio/bgm.mp3")
+pygame.mixer.music.set_volume(0.3)
+pygame.mixer.music.play(-1)  # loop forever
+
+
+def change_music(new_track):
+    pygame.mixer.music.stop()
+    pygame.mixer.music.load(new_track)
+    pygame.mixer.music.play(-1)  # Loop forever
+
+def change_music_no_loop(new_track):
+    pygame.mixer.music.stop()
+    pygame.mixer.music.load(new_track)
+    pygame.mixer.music.play()
 
 # Main game loop
 while running:
@@ -208,6 +238,8 @@ while running:
                     if btn.collidepoint(event.pos) and lvl <= highest_level_unlocked:
                         reset_game(lvl)
                         game_state = "game"
+                        change_music("assets/audio/battle_bgm.mp3")
+                        pygame.mixer.music.set_volume(0.1) 
                 if level_back_btn and level_back_btn.collidepoint(event.pos):
                     game_state = "menu"
 
@@ -272,7 +304,14 @@ while running:
         # GAME
         elif game_state == "game":
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if not game_over and not (dialog_state == "waiting" or current_turn == "enemy"):
+                if (
+                    not game_over and
+                    not pending_enemy_attack and
+                    not enemy_message_delay and
+                    not enemy.attack_animation_active and
+                    not (dialog_state == "waiting" or current_turn == "enemy")
+                ):
+
                     if dialog_state == "bag":
                         for btn_rect, label in bag_buttons:
                             if btn_rect.collidepoint(event.pos):
@@ -283,9 +322,11 @@ while running:
                                         if selected_item == "Maliit na Potion":
                                             message = f"Ginamit mo ang {selected_item}! Gumaling ng {small_potion} HP!"
                                             player.health += small_potion
+                                            healing_sound.play()
                                         elif selected_item == "Malaking Potion":
                                             message = f"Ginamit mo ang {selected_item}! Gumaling ng {big_potion} HP!"
                                             player.health += big_potion
+                                            healing_sound.play()
 
                                         player.health = min(player.health, player.max_health)
                                         inventory[selected_item] -= 1  # Only subtract if used
@@ -348,6 +389,7 @@ while running:
                                     game_over = True
                                     surrender_time = pygame.time.get_ticks()
                                     dialog_state = "menu"
+                                    change_music("assets/audio/bgm.mp3")
                                 elif label == "No":
                                     dialog_state = "menu"
                                     message = "Ano ang gagawin mo?"
@@ -368,11 +410,17 @@ while running:
                 else:
                     if next_level_btn and next_level_btn.collidepoint(event.pos):
                         reset_game(current_level + 1)
+                        change_music("assets/audio/battle_bgm.mp3")
+                        pygame.mixer.music.set_volume(0.1) 
                     elif main_menu_btn and main_menu_btn.collidepoint(event.pos):
                         game_state = "menu"
+                        change_music("assets/audio/bgm.mp3")
+                        pygame.mixer.music.set_volume(0.3) 
                     elif retry_btn and retry_btn.collidepoint(event.pos):
                         reset_game(current_level)
                         game_state = "game"  # Ensure the state resets to "game"
+                        change_music("assets/audio/battle_bgm.mp3")
+                        pygame.mixer.music.set_volume(0.1) 
 
     # Handle delayed reset after cooldown message
     if dialog_state == "cooldown_wait" and pending_cooldown_reset:
@@ -479,7 +527,6 @@ while running:
         elif enemy_message_delay == True:  # Condition explicitly checks the flag
             if pygame.time.get_ticks() - enemy_message_start_time >= 2000:  # 2 seconds delay
                 message = "Ano ang gagawin mo?"  # Prompt for player's turn
-                
                 dialog_state = "menu"
                 current_turn = "player"  # Switch to player turn
                 enemy_message_delay = False  # Reset message delay flag
@@ -515,8 +562,12 @@ while running:
                 if unlocked_name not in unlocked_roosters:
                     unlocked_roosters.append(unlocked_name)
                     message = f"Nanalo ka! Na-unlock ang {unlocked_name} at nakakuha ng {reward} coins!"
+                    change_music_no_loop("assets/audio/victory.mp3")
+                    pygame.mixer.music.set_volume(0.5) 
                 else:
                     message = f"Nanalo ka! Nakakuha ng {reward} coins!"
+                    change_music_no_loop("assets/audio/victory.mp3")
+                    pygame.mixer.music.set_volume(0.5) 
 
                 highest_level_unlocked = max(highest_level_unlocked, current_level + 1)
                 reward_given = True  # ✅ Prevent Multiple Rewards
@@ -536,13 +587,23 @@ while running:
                 game_over = True
                 reward_given = True
                 highest_level_unlocked = max(highest_level_unlocked, current_level)
-                pygame.time.wait(1000)
+                change_music_no_loop("assets/audio/loss.mp3")
+                pygame.mixer.music.set_volume(0.3)
+                pygame.time.wait(5000)
                 game_state = "menu"
+                change_music("assets/audio/bgm.mp3")
+                pygame.mixer.music.set_volume(0.3) 
+
             else:
                 retry_btn, main_menu_btn = draw_post_win_buttons(
                     screen, WIDTH, HEIGHT, game_over=True, victory=False
                 )
                 next_level_btn = None
+                if not loss_music_played:
+                    change_music_no_loop("assets/audio/loss.mp3")
+                    pygame.mixer.music.set_volume(0.3)
+                    loss_music_played = True
+
 
 
         # Drawing the dialog box

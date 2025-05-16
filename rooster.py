@@ -4,6 +4,7 @@ import os
 import random
 from settings import font, WHITE
 
+
 def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS
@@ -11,16 +12,19 @@ def resource_path(relative_path):
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
 
+pygame.mixer.init()
+attack_sound_path = resource_path("assets/audio/attack.wav")
+attack_sound = pygame.mixer.Sound(attack_sound_path)
+
 class Rooster:
 
     image_cache = {} 
 
-    def __init__(self, name, color, x=0, y=0, is_enemy=False, max_health=100):
+    def __init__(self, name, color, x=0, y=0, is_enemy=False, max_health=100, boost_if_new=True):
         self.name = name
         self.color = color
         self.is_enemy = is_enemy
-        health_bonus = 20 if is_enemy else 0
-        self.max_health = max_health + health_bonus
+        self.max_health = max_health
         self.health = self.max_health
 
         self.skills = {
@@ -33,9 +37,6 @@ class Rooster:
         self.skill_cooldowns = {skill: 0 for skill in self.skills}
 
         self.current_skill_used = None
-
-        if is_enemy:
-            self._boost_skills()
 
         self.x = x
         self.y = y
@@ -73,6 +74,11 @@ class Rooster:
         for key in self.skills:
             skill = self.skills[key]
             skill["damage"] = int(skill["damage"] * 1)
+
+        # Boost HP as well
+        self.max_health = int(self.max_health * 1.1)
+        self.health = self.max_health  # Heal up to new max
+
 
     def draw(self, surface, target=None):
         if target is not None:
@@ -133,7 +139,7 @@ class Rooster:
         if random.random() < miss_chance:
             print(f"{self.name}'s {skill_name} missed!")
             return 0  # Return 0 when attack misses, not None
-
+        attack_sound.play()
         # Trigger attack animation
         self.attack_animation_active = True
         self.attack_animation_frame = 0  # Reset animation frame
@@ -203,7 +209,7 @@ class Rooster:
 
 # Subclasses — enemy boost handled automatically
 class ManokNaPuti(Rooster):
-    def __init__(self, x=0, y=0, is_enemy=False):
+    def __init__(self, x=0, y=0, is_enemy=False, boost_if_new=True):
         super().__init__("Manok na Puti", (255, 255, 255), x, y, is_enemy, max_health=130)
         self.skills = {
             "Tuka": {
@@ -235,12 +241,10 @@ class ManokNaPuti(Rooster):
                 "cooldown_counter": 0
             }
         }
-        if is_enemy:
-            self._boost_skills()
 
 
 class ManokNaPula(Rooster):
-    def __init__(self, x=0, y=0, is_enemy=False):
+    def __init__(self, x=0, y=0, is_enemy=False, boost_if_new=True):
         super().__init__("Manok na Pula", (255, 0, 0), x, y, is_enemy, max_health=140)
         self.skills = {
             "Tuka": {
@@ -272,12 +276,10 @@ class ManokNaPula(Rooster):
                 "cooldown_counter": 0
             }
         }
-        if is_enemy:
-            self._boost_skills()
 
 
 class ManokNaItim(Rooster):
-    def __init__(self, x=0, y=0, is_enemy=False):
+    def __init__(self, x=0, y=0, is_enemy=False, boost_if_new=True):
         super().__init__("Manok na Itim", (30, 30, 30), x, y, is_enemy, max_health=150)
         self.skills = {
             "Madilim na Tuka": {
@@ -309,12 +311,10 @@ class ManokNaItim(Rooster):
                 "cooldown_counter": 0
             }
         }
-        if is_enemy:
-            self._boost_skills()
 
 
 class ManokNaBalbon(Rooster):
-    def __init__(self, x=0, y=0, is_enemy=False):
+    def __init__(self, x=0, y=0, is_enemy=False, boost_if_new=True):
         super().__init__("Manok na Balbon", (50, 25, 25), x, y, is_enemy, max_health=160)
         self.skills = {
             "Matingkad na Sipang": {
@@ -346,12 +346,10 @@ class ManokNaBalbon(Rooster):
                 "cooldown_counter": 0
             }
         }
-        if is_enemy:
-            self._boost_skills()
 
 
 class ChickenNiGlock9(Rooster):
-    def __init__(self, x=0, y=0, is_enemy=False):
+    def __init__(self, x=0, y=0, is_enemy=False,boost_if_new=True):
         super().__init__("Chicken Ni Glock9", (80, 10, 150), x, y, is_enemy, max_health=170)
         self.skills = {
             "Rap Sapantaha": {
@@ -383,6 +381,4 @@ class ChickenNiGlock9(Rooster):
                 "cooldown_counter": 0
             }
         }
-        if is_enemy:
-            self._boost_skills()
 
